@@ -1,0 +1,26 @@
+[  {
+    "fname": "first",
+    "lname": "last",
+    "adrs": "address",
+    "eid": "email.id@gmail.com",
+    "phn": "9999999999",
+    "pas": "Admin@123",
+    "conpas": "Admin@123"
+  },{
+  "fname":"first",
+  "lname":"last",
+  "adrs":"address",
+  "eid":"email.id@gmail.com",
+  "phn":"9999223999",
+  "pas":"Admin@1234",
+  "conpas":"Admin@1234"
+},{
+  "fname":"first",
+  "lname":"last",
+  "adrs":"address",
+  "eid":"email.id@gmail.com",
+  "phn":"1234567890",
+  "pas":"Admin@1234567",
+  "conpas":"Admin@1234567"
+}
+]

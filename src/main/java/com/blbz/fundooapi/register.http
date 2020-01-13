@@ -1,0 +1,14 @@
+POST http://localhost:8080/register
+Content-Type: application/json
+
+{
+  "adrs": "string",
+  "conpas": "Admin@2019",
+  "eid": "tamil.uonly@gmail.com",
+  "fname": "string",
+  "lname": "string",
+  "pas": "Admin@2019",
+  "phn": "9999999999"
+}
+
+###

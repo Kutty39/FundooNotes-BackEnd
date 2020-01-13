@@ -1,0 +1,20 @@
+<html lang="en">
+<body>
+<p>
+    Hi {name},
+    <br>
+        Thanks for register with us!!.
+    please click the below button to activate your account.
+    <br>
+    <br>
+    <a type="button" style="background-color: aqua;border: black;padding: 0.5rem" href="http://localhost:8080/activate?tk={jwt}">Activate</a>
+    <br>
+    <br>
+    <b>
+    Thanks,
+    <br>
+    BLBZ, Bangalore.
+    </b>
+</p>
+</body>
+</html>
