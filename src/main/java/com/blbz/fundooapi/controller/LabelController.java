@@ -1,7 +1,6 @@
 package com.blbz.fundooapi.controller;
 
 import com.blbz.fundooapi.dto.LabelDto;
-import com.blbz.fundooapi.exception.HeaderMissingException;
 import com.blbz.fundooapi.exception.InvalidUserException;
 import com.blbz.fundooapi.exception.LabelNotFoundException;
 import com.blbz.fundooapi.exception.ParameterEmptyException;
@@ -10,8 +9,6 @@ import com.blbz.fundooapi.service.LabelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/labels")
@@ -26,17 +23,17 @@ public class LabelController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllLabels(HttpServletRequest request) throws HeaderMissingException, InvalidUserException {
-        generalResponse.setResponse(labelService.getAllLabels(request));
+    public ResponseEntity<?> getAllLabels(@RequestHeader("Authorization") String jwtToken) throws  InvalidUserException {
+        generalResponse.setResponse(labelService.getAllLabels(jwtToken));
         return ResponseEntity.ok(generalResponse);
     }
 
     @GetMapping("/{label}")
-    public ResponseEntity<?> getLabel(@PathVariable String label, HttpServletRequest request) throws LabelNotFoundException, HeaderMissingException, InvalidUserException, ParameterEmptyException {
+    public ResponseEntity<?> getLabel(@PathVariable String label, @RequestHeader("Authorization") String jwtToken) throws LabelNotFoundException,  InvalidUserException, ParameterEmptyException {
         if(label==null || label.isEmpty()){
             throw new ParameterEmptyException("label text not passed");
         }
-        generalResponse.setResponse(labelService.getLabel(label,request));
+        generalResponse.setResponse(labelService.getLabel(label,jwtToken));
         return ResponseEntity.ok(generalResponse);
     }
 

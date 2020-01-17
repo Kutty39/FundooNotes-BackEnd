@@ -11,8 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-
 @RestController
 @RequestMapping("/api")
 public class NoteController {
@@ -26,45 +24,45 @@ public class NoteController {
     }
 
     @GetMapping("/notes/label/{label}")
-    public ResponseEntity<?> getNoteByLabel(@PathVariable String label, HttpServletRequest httpServletRequest) throws NoteNotFoundException, HeaderMissingException, InvalidUserException, LabelNotFoundException, ParameterEmptyException {
+    public ResponseEntity<?> getNoteByLabel(@PathVariable String label, @RequestHeader("Authorization") String jwtHeader) throws  InvalidUserException, LabelNotFoundException, ParameterEmptyException {
         if(label==null || label.isEmpty()){
             throw new ParameterEmptyException("label text not passed");
         }
-        generalResponse.setResponse(noteService.getNotesByLabel(label,httpServletRequest));
+        generalResponse.setResponse(noteService.getNotesByLabel(label,jwtHeader));
         return ResponseEntity.ok(generalResponse);
     }
 
     @GetMapping("/notes/status/{status}")
-    public ResponseEntity<?> getNoteByStatus(@PathVariable String status, HttpServletRequest httpServletRequest) throws NoteNotFoundException, HeaderMissingException, InvalidUserException, LabelNotFoundException, NoteStatusNotFoundException, ParameterEmptyException {
+    public ResponseEntity<?> getNoteByStatus(@PathVariable String status, @RequestHeader("Authorization") String jwtHeader) throws  InvalidUserException,  NoteStatusNotFoundException, ParameterEmptyException {
         if(status==null || status.isEmpty()){
             throw new ParameterEmptyException("status text not passed");
         }
-        generalResponse.setResponse(noteService.getNotesByStatus(status,httpServletRequest));
+        generalResponse.setResponse(noteService.getNotesByStatus(status,jwtHeader));
         return ResponseEntity.ok(generalResponse);
     }
 
 
     @GetMapping("/notes")
-    public ResponseEntity<?> getNote(HttpServletRequest httpServletRequest) throws NoteNotFoundException, HeaderMissingException, InvalidUserException {
+    public ResponseEntity<?> getNote( @RequestHeader("Authorization") String jwtHeader) throws NoteNotFoundException, InvalidUserException {
 
-        generalResponse.setResponse(noteService.getAllNotes(httpServletRequest));
+        generalResponse.setResponse(noteService.getAllNotes(jwtHeader));
         return ResponseEntity.ok(generalResponse);
     }
 
     @GetMapping("/notes/{id}")
-    public ResponseEntity<?> getNote(HttpServletRequest httpServletRequest, @PathVariable String id) throws NoteNotFoundException, HeaderMissingException, InvalidUserException, ParameterEmptyException {
+    public ResponseEntity<?> getNote( @RequestHeader("Authorization") String jwtHeader, @PathVariable String id) throws NoteNotFoundException, InvalidUserException, ParameterEmptyException {
         if(id==null || id.isEmpty()){
             throw new ParameterEmptyException("id not passed");
         }
-        generalResponse.setResponse(noteService.getNotes(Integer.parseInt(id), httpServletRequest));
+        generalResponse.setResponse(noteService.getNotes(Integer.parseInt(id), jwtHeader));
         return ResponseEntity.ok(generalResponse);
     }
 
     @PostMapping("/notes")
-    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException {
+    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String jwtHeader) throws InvalidUserException {
         if (noteDto.getNoteText() != null || noteDto.getNoteTitle() != null ||
                 noteDto.getNoteRemainder() != null || noteDto.getCollaborator() != null) {
-            int noteId = noteService.createNote(noteDto, httpServletRequest);
+            int noteId = noteService.createNote(noteDto, jwtHeader);
             generalResponse.setResponse(noteId);
             if (noteId > 0) {
                 return ResponseEntity.ok(generalResponse);
@@ -79,8 +77,8 @@ public class NoteController {
     }
 
     @PutMapping("/notes")
-    public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException {
-        int noteId = noteService.editNote(noteDto, httpServletRequest);
+    public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String jwtHeader) throws InvalidUserException {
+        int noteId = noteService.editNote(noteDto, jwtHeader);
         if (noteId > 0) {
             generalResponse.setResponse(noteId);
             return ResponseEntity.ok().body(generalResponse);
@@ -91,8 +89,8 @@ public class NoteController {
     }
 
     @PutMapping("/note/status")
-    public ResponseEntity<?> updatedStatus(@RequestBody NoteStatusDto noteStatusDto, HttpServletRequest httpServletRequest) throws InvalidUserException, HeaderMissingException, InvalidNoteStatus, NoteNotFoundException {
-        int noteID = noteService.updateStatus(noteStatusDto, httpServletRequest);
+    public ResponseEntity<?> updatedStatus(@RequestBody NoteStatusDto noteStatusDto, @RequestHeader("Authorization") String jwtHeader) throws InvalidUserException, InvalidNoteStatus, NoteNotFoundException {
+        int noteID = noteService.updateStatus(noteStatusDto, jwtHeader);
         generalResponse.setResponse(noteID);
         if (noteID > 0) {
             return ResponseEntity.ok(generalResponse);
@@ -102,8 +100,8 @@ public class NoteController {
     }
 
     @PutMapping("/notes/status")
-    public ResponseEntity<?> updatedStatus(@RequestBody NotesStatusDto notesStatusDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException, InvalidNoteStatus {
-        int noteId = noteService.updateStatus(notesStatusDto, httpServletRequest);
+    public ResponseEntity<?> updatedStatus(@RequestBody NotesStatusDto notesStatusDto, @RequestHeader("Authorization") String jwtHeader) throws InvalidUserException, InvalidNoteStatus {
+        int noteId = noteService.updateStatus(notesStatusDto, jwtHeader);
         generalResponse.setResponse(noteId);
         if (noteId > 0) {
             return ResponseEntity.ok(generalResponse);

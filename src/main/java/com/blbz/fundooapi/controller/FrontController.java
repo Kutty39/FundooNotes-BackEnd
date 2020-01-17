@@ -43,8 +43,8 @@ public class FrontController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<?> getAllUsers(HttpServletRequest httpServletRequest) throws Exception {
-        generalResponse.setResponse(userService.getAllUser(httpServletRequest));
+    public ResponseEntity<?> getAllUsers(@RequestHeader("Authorization") String jwtToken) throws Exception {
+        generalResponse.setResponse(userService.getAllUser(jwtToken));
         return ResponseEntity.ok().body(generalResponse);
     }
 
@@ -94,21 +94,21 @@ public class FrontController {
         return ResponseEntity.ok(generalResponse);
     }
 
-    @GetMapping("/activate")
-    public ResponseEntity<?> activateUser(@RequestParam String tk) throws TokenExpiredException, InvalidTokenException {
-        generalResponse.setResponse(userService.userActivate(tk));
+    @GetMapping("/activate/{jwt}")
+    public ResponseEntity<?> activateUser(@PathVariable String jwt) throws TokenExpiredException, InvalidTokenException {
+        generalResponse.setResponse(userService.userActivate(jwt));
         return ResponseEntity.ok().body(generalResponse);
     }
 
-    @GetMapping("/blockjwt")
-    public ResponseEntity<?> blockJwt(@RequestParam String jwt) {
+    @GetMapping("/blockjwt/{jwt}")
+    public ResponseEntity<?> blockJwt(@PathVariable String jwt) {
         userService.blockedJwt(jwt);
         generalResponse.setResponse(true);
         return ResponseEntity.ok().body(generalResponse);
     }
 
-    @GetMapping("/forgotpassword")
-    public ResponseEntity<?> forgotPassword(@RequestParam String email) throws Exception {
+    @GetMapping("/forgotpassword/{email}")
+    public ResponseEntity<?> forgotPassword(@PathVariable String email) throws Exception {
         if (userService.checkEmail(email)) {
             generalResponse.setResponse(userService.forgotPasswordMail(email));
             return ResponseEntity.ok().body(generalResponse);
@@ -129,9 +129,9 @@ public class FrontController {
         return ResponseEntity.ok("Successfully resetted password. Please login again");
     }
 
-    @GetMapping("/reset")
-    public ResponseEntity<?> reset(@RequestParam String tk) {
-        generalResponse.setResponse("please send your password and conform password to http://localhost:8080/api/resetpassword\nusing post with JWT:" + tk +
+    @GetMapping("/reset/{jwt}")
+    public ResponseEntity<?> reset(@PathVariable String jwt) {
+        generalResponse.setResponse("please send your password and conform password to http://localhost:8080/api/resetpassword\nusing post with JWT:" + jwt +
                 " this token in header (parameters \n{\"password\":\"your password\",\n\"conpassword\":\"your conform password\"\n})");
         return ResponseEntity.ok(generalResponse);
     }

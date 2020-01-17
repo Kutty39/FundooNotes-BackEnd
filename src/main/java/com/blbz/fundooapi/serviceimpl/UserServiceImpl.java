@@ -6,7 +6,6 @@ import com.blbz.fundooapi.dto.MsgDto;
 import com.blbz.fundooapi.dto.RegisterDto;
 import com.blbz.fundooapi.entiry.UserInfo;
 import com.blbz.fundooapi.entiry.UserStatus;
-import com.blbz.fundooapi.exception.HeaderMissingException;
 import com.blbz.fundooapi.exception.InvalidTokenException;
 import com.blbz.fundooapi.exception.InvalidUserException;
 import com.blbz.fundooapi.exception.TokenExpiredException;
@@ -22,8 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestHeader;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -42,7 +41,8 @@ public class UserServiceImpl implements UserService {
     private final UserInfo userInfo;
     @Value("${jwt.expiry.time.sec.day}")
     private int expireForDay;
-
+    @Value("${frontend.server.host}")
+    private String SERVERNAME;
     private String msgBody;
 
     @Autowired
@@ -173,9 +173,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserInfo> getAllUser(HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException {
+    public List<UserInfo> getAllUser(@RequestHeader("Authorization") String jwtToken) throws  InvalidUserException {
 
-        if (jwtUtil.validateHeader(httpServletRequest) != null) {
+        if (jwtUtil.validateHeader(jwtToken) != null) {
             return userRepo.findAll();
         }
         return null;
@@ -186,6 +186,7 @@ public class UserServiceImpl implements UserService {
         if (msgBody != null) {
             msgBody = msgBody.replace("{name}", msgDto.getName());
             msgBody = msgBody.replace("{jwt}", msgDto.getJwt());
+            msgBody = msgBody.replace("{servername}", SERVERNAME);
             msgDto.setMsg(msgBody);
             publisher.produceMsg(msgDto);
             return "Please check your email.";

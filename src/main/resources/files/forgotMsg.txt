@@ -6,7 +6,7 @@
     please click the below button to reset your account password.
     <br>
     <br>
-    <a type="button" style="background-color: aqua;border: black;padding: 0.5rem" href="http://localhost:8080/reset?tk={jwt}">Reset</a>
+    <a type="button" style="background-color: aqua;border: black;padding: 0.5rem" href="http://{servername}/reset/{jwt}">Reset</a>
     <br>
     <br>
     <b>

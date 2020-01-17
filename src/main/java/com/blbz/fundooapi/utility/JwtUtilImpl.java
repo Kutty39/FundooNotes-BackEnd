@@ -1,7 +1,6 @@
 package com.blbz.fundooapi.utility;
 
 import com.blbz.fundooapi.entiry.UserInfo;
-import com.blbz.fundooapi.exception.HeaderMissingException;
 import com.blbz.fundooapi.exception.InvalidUserException;
 import com.blbz.fundooapi.repository.UserRepo;
 import com.blbz.fundooapi.service.JwtUtil;
@@ -18,7 +17,6 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -31,6 +29,7 @@ public class JwtUtilImpl implements JwtUtil {
     private long EXPIRY_TIME;
     @Value("${jwt.secret}")
     private String MY_KEY;
+
 
     private String userEmail = null;
     private boolean isValid = false;
@@ -61,7 +60,7 @@ public class JwtUtilImpl implements JwtUtil {
         return Jwts.builder()
                 .addClaims(claimsBody)
                 .setSubject(userEmail)
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRY_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expire))
                 .signWith(SignatureAlgorithm.HS512, MY_KEY).compact();
     }
 
@@ -92,19 +91,15 @@ public class JwtUtilImpl implements JwtUtil {
     }
 
     @Override
-    @Cacheable(value = "jwt",key = "#httpServletRequest.getHeader('Authorization').substring(7)")
-    public UserInfo validateHeader(HttpServletRequest httpServletRequest) throws InvalidUserException, HeaderMissingException {
-        System.out.println("jwt Enter");
-        if (httpServletRequest.getHeader("Authorization") != null) {
-            String jwt = httpServletRequest.getHeader("Authorization").replace("Bearer ", "");
+    @Cacheable(value = "jwt",key = "#jwtHeader.substring(7)")
+    public UserInfo validateHeader(String jwtHeader) throws InvalidUserException {
+            String jwt = jwtHeader.replace("Bearer ", "");
             String userEmail = loadJwt(jwt).userName();
             UserInfo userInfo = userRepo.findByEid(userEmail);
             if (userInfo == null) {
                 throw new InvalidUserException();
             }
             return userInfo;
-        }
-        throw new HeaderMissingException();
     }
 
 

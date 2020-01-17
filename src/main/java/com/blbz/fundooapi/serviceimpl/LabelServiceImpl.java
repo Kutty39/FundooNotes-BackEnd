@@ -2,7 +2,6 @@ package com.blbz.fundooapi.serviceimpl;
 
 import com.blbz.fundooapi.dto.LabelDto;
 import com.blbz.fundooapi.entiry.Label;
-import com.blbz.fundooapi.exception.HeaderMissingException;
 import com.blbz.fundooapi.exception.InvalidUserException;
 import com.blbz.fundooapi.exception.LabelNotFoundException;
 import com.blbz.fundooapi.repository.LabelRepo;
@@ -11,8 +10,8 @@ import com.blbz.fundooapi.service.LabelService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,16 +35,16 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    public List<Label> getAllLabels(HttpServletRequest request) throws HeaderMissingException, InvalidUserException {
-        jwtUtil.validateHeader(request);
+    public List<Label> getAllLabels(@RequestHeader("Authorization") String jwtToken) throws  InvalidUserException {
+        jwtUtil.validateHeader(jwtToken);
         return labelRepo.findAll();
     }
 
     @Override
-    public Label getLabel(String labeltext, HttpServletRequest request) throws LabelNotFoundException, HeaderMissingException, InvalidUserException {
-        jwtUtil.validateHeader(request);
-        if (labeltext != null) {
-            label = labelRepo.findByUniqKey(labeltext);
+    public Label getLabel(String labelText, @RequestHeader("Authorization") String jwtToken) throws LabelNotFoundException,  InvalidUserException {
+        jwtUtil.validateHeader(jwtToken);
+        if (labelText != null) {
+            label = labelRepo.findByUniqKey(labelText);
             if(label ==null){
                 throw new LabelNotFoundException();
             }

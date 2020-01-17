@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,13 +52,13 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int createNote(NoteDto noteDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException {
-        return noteAction(noteDto, httpServletRequest, false);
+    public int createNote(NoteDto noteDto,String  jwtHeader) throws  InvalidUserException {
+        return noteAction(noteDto, jwtHeader, false);
     }
 
     @Override
-    public int editNote(NoteDto noteDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException {
-        return noteRepo.findByUniqKey(noteDto.getNoteId()) == null ? 0 : noteAction(noteDto, httpServletRequest, true);
+    public int editNote(NoteDto noteDto, String  jwtHeader) throws  InvalidUserException {
+        return noteRepo.findByUniqKey(noteDto.getNoteId()) == null ? 0 : noteAction(noteDto, jwtHeader, true);
     }
 
     @Override
@@ -83,9 +82,9 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int updateStatus(NotesStatusDto notesStatusDto, HttpServletRequest httpServletRequest) throws InvalidUserException, HeaderMissingException, InvalidNoteStatus {
+    public int updateStatus(NotesStatusDto notesStatusDto, String jwtHeader) throws InvalidUserException, InvalidNoteStatus {
 
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         List<NoteInfo> noteInfos = noteRepo.findAllById(notesStatusDto.getNoteId());
         NoteStatus noteStatus = noteStatusRepo.findByStatusText(notesStatusDto.getStatus());
         if (noteStatus != null) {
@@ -103,9 +102,9 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int updateStatus(NoteStatusDto noteStatusDto, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException, NoteNotFoundException, InvalidNoteStatus {
+    public int updateStatus(NoteStatusDto noteStatusDto, String jwtHeader) throws  InvalidUserException, NoteNotFoundException, InvalidNoteStatus {
 
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         noteInfo = noteRepo.findByUniqKey(noteStatusDto.getNoteId());
         if (noteInfo != null) {
             NoteStatus noteStatus = noteStatusRepo.findByStatusText(noteStatusDto.getStatus());
@@ -124,8 +123,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<NoteInfo> getNotesByLabel(String labelText, HttpServletRequest httpServletRequest) throws LabelNotFoundException, HeaderMissingException, InvalidUserException {
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+    public List<NoteInfo> getNotesByLabel(String labelText, String  jwtHeader) throws LabelNotFoundException,  InvalidUserException {
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         Label label = labelRepo.findByUniqKey(labelText);
         if (label != null) {
             return noteRepo.findByLabelsAndAndCollaborator(label, userInfo);
@@ -135,8 +134,8 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     @Transactional
-    public List<NoteInfo> getAllNotes(HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException, NoteNotFoundException {
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+    public List<NoteInfo> getAllNotes(String  jwtHeader) throws  InvalidUserException, NoteNotFoundException {
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         List<NoteInfo> noteInfos = noteRepo.findByCreatedBy(userInfo);
         if (noteInfos == null || noteInfos.get(0) == null) {
             throw new NoteNotFoundException();
@@ -146,8 +145,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public NoteInfo getNotes(int id, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException, NoteNotFoundException {
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+    public NoteInfo getNotes(int id, String jwtHeader) throws  InvalidUserException, NoteNotFoundException {
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         NoteInfo noteInfo = noteRepo.findByCollaboratorAndNoteId(userInfo, id);
         if (noteInfo == null) {
             throw new NoteNotFoundException();
@@ -156,8 +155,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<NoteInfo> getNotesByStatus(String statusText, HttpServletRequest httpServletRequest) throws HeaderMissingException, InvalidUserException, NoteStatusNotFoundException {
-        UserInfo userInfo = jwtUtil.validateHeader(httpServletRequest);
+    public List<NoteInfo> getNotesByStatus(String statusText, String  jwtHeader) throws  InvalidUserException, NoteStatusNotFoundException {
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         NoteStatus noteStatus = noteStatusRepo.findByStatusText(statusText);
         if (noteStatus != null) {
             return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo);
@@ -166,8 +165,8 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int noteAction(NoteDto noteDto, HttpServletRequest httpServletRequest, boolean edit) throws HeaderMissingException, InvalidUserException {
-        UserInfo createdBy = jwtUtil.validateHeader(httpServletRequest);
+    public int noteAction(NoteDto noteDto, String  jwtHeader, boolean edit) throws  InvalidUserException {
+        UserInfo createdBy = jwtUtil.validateHeader(jwtHeader);
         String userEmail = createdBy.getEid();
         BeanUtils.copyProperties(noteDto, noteInfo);
         if (edit) {

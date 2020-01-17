@@ -7,7 +7,6 @@ import com.blbz.fundooapi.exception.InvalidTokenException;
 import com.blbz.fundooapi.exception.TokenExpiredException;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Component
@@ -23,5 +22,5 @@ public interface UserService {
     String forgotPasswordMail(String email) throws Exception;
     void updatePassword(String jwt,String pas);
 
-    List<UserInfo> getAllUser(HttpServletRequest httpServletRequest) throws Exception;
+    List<UserInfo> getAllUser(String jwtToken) throws Exception;
 }
