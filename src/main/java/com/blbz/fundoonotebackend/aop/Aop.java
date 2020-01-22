@@ -16,7 +16,7 @@ public class Aop {
     public Object forController(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         log.info("Method: " + proceedingJoinPoint.getSignature().toString());
         value = proceedingJoinPoint.proceed();
-        log.info(value != null ? value.toString() : null);
+        log.info("Returning Value: "+(value != null ? value.toString() : null));
         log.info("Method: Exit from " + proceedingJoinPoint.getSignature().getName());
         return value;
     }

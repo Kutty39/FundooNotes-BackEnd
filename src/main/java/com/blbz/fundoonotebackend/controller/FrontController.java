@@ -4,6 +4,7 @@ import com.blbz.fundoonotebackend.dto.LoginDto;
 import com.blbz.fundoonotebackend.dto.RegisterDto;
 import com.blbz.fundoonotebackend.dto.ResetPassDto;
 import com.blbz.fundoonotebackend.exception.InvalidTokenException;
+import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.TokenExpiredException;
 import com.blbz.fundoonotebackend.responce.GeneralResponse;
 import com.blbz.fundoonotebackend.service.UserService;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,11 +52,12 @@ public class FrontController {
     public ResponseEntity<?> login(@Valid@RequestBody LoginDto loginDto,BindingResult bindingResult) throws Exception {
        util.validAndThrow(bindingResult);
         try {
+            if(!userService.checkEmail(loginDto.getUsername())){throw new InvalidUserException("Bad credential(Username or Password is wrong)");}
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
             );
         } catch (BadCredentialsException e) {
-            throw new Exception("Bad credential(Username or Password is wrong)");
+            throw new InvalidUserException("Bad credential(Username or Password is wrong)");
         }
         generalResponse.setResponse(userService.loginUser(loginDto.getUsername()));
         return ResponseEntity.ok(generalResponse);
@@ -119,12 +120,12 @@ public class FrontController {
 
     }
     @PostMapping("/resetpassword")
-    public ResponseEntity<?> resetPass(@Valid @RequestBody ResetPassDto resetPassDto, BindingResult bindingResult, HttpServletRequest request) {
+    public ResponseEntity<?> resetPass(@Valid @RequestBody ResetPassDto resetPassDto, BindingResult bindingResult, @RequestHeader("Authorization") String header) {
         util.validAndThrow(bindingResult);
         if (!resetPassDto.getPassword().equals(resetPassDto.getConpassword())) {
             return ResponseEntity.badRequest().body("Password and conform is not matched");
         }
-        String jwt = request.getHeader("Authorization").replace("Bearer ", "");
+        String jwt = header.replace("Bearer ", "");
         userService.updatePassword(jwt, resetPassDto.getPassword());
         generalResponse.setResponse("Successfully resetted password. Please login again");
         return ResponseEntity.ok().body(generalResponse);

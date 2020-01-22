@@ -7,7 +7,6 @@ import com.blbz.fundoonotebackend.exception.ParameterEmptyException;
 import com.blbz.fundoonotebackend.responce.GeneralResponse;
 import com.blbz.fundoonotebackend.service.LabelService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,17 +23,17 @@ public class LabelController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllLabels(HttpHeaders headers) throws  InvalidUserException {
-        generalResponse.setResponse(labelService.getAllLabels(headers.getFirst("Authorization").replace("Bearer ","")));
+    public ResponseEntity<?> getAllLabels(@RequestHeader("Authorization") String header) throws  InvalidUserException {
+        generalResponse.setResponse(labelService.getAllLabels(header.replace("Bearer ","")));
         return ResponseEntity.ok(generalResponse);
     }
 
     @GetMapping("/{label}")
-    public ResponseEntity<?> getLabel(@PathVariable String label, HttpHeaders headers) throws LabelNotFoundException,  InvalidUserException, ParameterEmptyException {
+    public ResponseEntity<?> getLabel(@PathVariable String label, @RequestHeader("Authorization") String header) throws LabelNotFoundException,  InvalidUserException, ParameterEmptyException {
         if(label==null || label.isEmpty()){
             throw new ParameterEmptyException("label text not passed");
         }
-        generalResponse.setResponse(labelService.getLabel(label,headers.getFirst("Authorization").replace("Bearer ","")));
+        generalResponse.setResponse(labelService.getLabel(label,header.replace("Bearer ","")));
         return ResponseEntity.ok(generalResponse);
     }
 

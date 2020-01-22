@@ -136,6 +136,9 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public String loginUser(String userEmail) throws Exception {
         UserInfo userInfo = userRepo.findByEid(userEmail);
+        if(userInfo==null){
+            throw new InvalidUserException("Email or Password is wrong");
+        }
         String status = userInfo.getUserStatus().getStatusText();
         if (status.equals("Active")) {
             return (jwtUtil.generateJwt(userEmail, "api"));
