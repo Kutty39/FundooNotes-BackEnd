@@ -145,7 +145,8 @@ public class UserServiceImpl implements UserService {
         } else if (status.equals("Closed")) {
             throw new InvalidUserException("You are trying to access closed account. Please register again");
         } else {
-            return sendActivationMail(userEmail, userInfo.getFname() + " " + userInfo.getLname());
+            String str=sendActivationMail(userEmail, userInfo.getFname() + " " + userInfo.getLname());
+            throw new InvalidUserException("Your account is not activated yet. We sent activation mail to your mail."+ str);
         }
     }
 

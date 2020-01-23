@@ -60,7 +60,7 @@ public class FrontController {
             throw new InvalidUserException("Bad credential(Username or Password is wrong)");
         }
         generalResponse.setResponse(userService.loginUser(loginDto.getUsername()));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @PostMapping(value = "/register")
