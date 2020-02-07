@@ -43,8 +43,7 @@ public class NoteController {
 
 
     @GetMapping("/notes")
-    public ResponseEntity<?> getNote( @RequestHeader("Authorization") String header) throws NoteNotFoundException, InvalidUserException {
-
+    public ResponseEntity<?> getAllNotes( @RequestHeader("Authorization") String header) throws NoteNotFoundException, InvalidUserException {
         generalResponse.setResponse(noteService.getAllNotes(header.replace("Bearer ","")));
         return ResponseEntity.ok(generalResponse);
     }
@@ -62,9 +61,9 @@ public class NoteController {
     public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException {
         if (noteDto.getNoteText() != null || noteDto.getNoteTitle() != null ||
                 noteDto.getNoteRemainder() != null || noteDto.getCollaborator() != null) {
-            int noteId = noteService.createNote(noteDto, header.replace("Bearer ",""));
-            generalResponse.setResponse(noteId);
-            if (noteId > 0) {
+            NoteDto respNoteDto = noteService.createNote(noteDto, header.replace("Bearer ",""));
+            generalResponse.setResponse(respNoteDto);
+            if (respNoteDto !=null) {
                 return ResponseEntity.ok(generalResponse);
             } else {
                 return ResponseEntity.badRequest().body(generalResponse);
@@ -78,9 +77,9 @@ public class NoteController {
 
     @PutMapping("/notes")
     public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException {
-        int noteId = noteService.editNote(noteDto, header.replace("Bearer ",""));
-        if (noteId > 0) {
-            generalResponse.setResponse(noteId);
+        NoteDto respNoteDto = noteService.editNote(noteDto, header.replace("Bearer ",""));
+        if (respNoteDto !=null) {
+            generalResponse.setResponse(respNoteDto);
             return ResponseEntity.ok().body(generalResponse);
         } else {
             generalResponse.setResponse("Something went wrong");

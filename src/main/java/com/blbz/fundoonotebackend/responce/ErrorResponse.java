@@ -13,5 +13,5 @@ import org.springframework.http.HttpStatus;
 public class ErrorResponse {
     private int errorCode;
     private HttpStatus errorStatus;
-    private String errorMessage;
+    private String message;
 }

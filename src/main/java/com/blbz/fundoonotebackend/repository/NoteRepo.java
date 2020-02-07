@@ -16,8 +16,8 @@ import java.util.List;
 public interface NoteRepo extends JpaRepository<NoteInfo,Integer> {
     @Query("from NoteInfo where noteId=:id")
     NoteInfo findByUniqKey(int id);
-    List<NoteInfo> findByCreatedBy(UserInfo collaborator);
+    List<NoteInfo> findByCollaborator(UserInfo collaborator);
     NoteInfo findByCollaboratorAndNoteId(UserInfo userInfo,int id);
-    List<NoteInfo> findByLabelsAndAndCollaborator(Label label,UserInfo userInfo);
+    List<NoteInfo> findByLabelsAndCollaborator(Label label, UserInfo userInfo);
     List<NoteInfo> findByNoteStatusAndCollaborator(NoteStatus noteStatus,UserInfo userInfo);
 }

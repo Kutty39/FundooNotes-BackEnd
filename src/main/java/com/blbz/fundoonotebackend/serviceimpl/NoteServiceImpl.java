@@ -11,6 +11,7 @@ import com.blbz.fundoonotebackend.service.CustomMapper;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.LabelService;
 import com.blbz.fundoonotebackend.service.NoteService;
+import com.blbz.fundoonotebackend.utility.NoteDtoMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class NoteServiceImpl implements NoteService {
@@ -32,13 +34,15 @@ public class NoteServiceImpl implements NoteService {
     private final ColorRepo colorRepo;
     private final LabelService labelService;
     private final LabelDto labelDto;
+    private final NoteDtoMapper noteDtoMapper;
     private NoteInfo noteInfo;
+    private NoteDto noteDto;
 
 
     @Autowired
     public NoteServiceImpl(CustomMapper customMapper, NoteRepo noteRepo, NoteInfo noteInfo
             , LabelRepo labelRepo, UserRepo userRepo, JwtUtil jwtUtil, NoteStatusRepo noteStatusRepo,
-                           ColorRepo colorRepo, LabelService labelService, LabelDto labelDto) {
+                           ColorRepo colorRepo, LabelService labelService, LabelDto labelDto, NoteDtoMapper noteDtoMapper, NoteDto noteDto) {
         this.customMapper = customMapper;
         this.noteRepo = noteRepo;
         this.noteInfo = noteInfo;
@@ -49,16 +53,18 @@ public class NoteServiceImpl implements NoteService {
         this.colorRepo = colorRepo;
         this.labelService = labelService;
         this.labelDto = labelDto;
+        this.noteDtoMapper = noteDtoMapper;
+        this.noteDto = noteDto;
     }
 
     @Override
-    public int createNote(NoteDto noteDto,String  jwtHeader) throws  InvalidUserException {
+    public NoteDto createNote(NoteDto noteDto, String jwtHeader) throws InvalidUserException {
         return noteAction(noteDto, jwtHeader, false);
     }
 
     @Override
-    public int editNote(NoteDto noteDto, String  jwtHeader) throws  InvalidUserException {
-        return noteRepo.findByUniqKey(noteDto.getNoteId()) == null ? 0 : noteAction(noteDto, jwtHeader, true);
+    public NoteDto editNote(NoteDto noteDto, String jwtHeader) throws InvalidUserException {
+        return noteRepo.findByUniqKey(noteDto.getNoteId()) == null ? null : noteAction(noteDto, jwtHeader, true);
     }
 
     @Override
@@ -102,7 +108,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int updateStatus(NoteStatusDto noteStatusDto, String jwtHeader) throws  InvalidUserException, NoteNotFoundException, InvalidNoteStatus {
+    public int updateStatus(NoteStatusDto noteStatusDto, String jwtHeader) throws InvalidUserException, NoteNotFoundException, InvalidNoteStatus {
 
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         noteInfo = noteRepo.findByUniqKey(noteStatusDto.getNoteId());
@@ -123,49 +129,52 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<NoteInfo> getNotesByLabel(String labelText, String  jwtHeader) throws LabelNotFoundException,  InvalidUserException {
+    @Transactional
+    public List<NoteDto> getNotesByLabel(String labelText, String jwtHeader) throws LabelNotFoundException, InvalidUserException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         Label label = labelRepo.findByUniqKey(labelText);
         if (label != null) {
-            return noteRepo.findByLabelsAndAndCollaborator(label, userInfo);
+            return noteRepo.findByLabelsAndCollaborator(label, userInfo).stream().map(noteDtoMapper::dto).collect(Collectors.toList());
         }
         throw new LabelNotFoundException("\"" + labelText + "\" not found");
     }
 
     @Override
     @Transactional
-    public List<NoteInfo> getAllNotes(String  jwtHeader) throws  InvalidUserException, NoteNotFoundException {
+    public List<NoteDto> getAllNotes(String jwtHeader) throws InvalidUserException, NoteNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        List<NoteInfo> noteInfos = noteRepo.findByCreatedBy(userInfo);
-        if (noteInfos == null || noteInfos.get(0) == null) {
+        List<NoteInfo> noteInfos = noteRepo.findByCollaborator(userInfo);
+        if (noteInfos.size() == 0) {
             throw new NoteNotFoundException();
         }
-        return noteInfos;
+        return  noteInfos.stream().map(noteDtoMapper::dto).collect(Collectors.toList());
 
     }
 
     @Override
-    public NoteInfo getNotes(int id, String jwtHeader) throws  InvalidUserException, NoteNotFoundException {
+    @Transactional
+    public NoteDto getNotes(int id, String jwtHeader) throws InvalidUserException, NoteNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         NoteInfo noteInfo = noteRepo.findByCollaboratorAndNoteId(userInfo, id);
         if (noteInfo == null) {
             throw new NoteNotFoundException();
         }
-        return noteInfo;
+        return noteDtoMapper.dto(noteInfo);
     }
 
     @Override
-    public List<NoteInfo> getNotesByStatus(String statusText, String  jwtHeader) throws  InvalidUserException, NoteStatusNotFoundException {
+    @Transactional
+    public List<NoteDto> getNotesByStatus(String statusText, String jwtHeader) throws InvalidUserException, NoteStatusNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         NoteStatus noteStatus = noteStatusRepo.findByStatusText(statusText);
         if (noteStatus != null) {
-            return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo);
+            return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo).stream().map(noteDtoMapper::dto).collect(Collectors.toList());
         }
-        throw new NoteStatusNotFoundException("\""+statusText+"\" not found");
+        throw new NoteStatusNotFoundException("\"" + statusText + "\" not found");
     }
 
     @Override
-    public int noteAction(NoteDto noteDto, String  jwtHeader, boolean edit) throws  InvalidUserException {
+    public NoteDto noteAction(NoteDto noteDto, String jwtHeader, boolean edit) throws InvalidUserException {
         UserInfo createdBy = jwtUtil.validateHeader(jwtHeader);
         String userEmail = createdBy.getEid();
         BeanUtils.copyProperties(noteDto, noteInfo);
@@ -193,7 +202,7 @@ public class NoteServiceImpl implements NoteService {
         }
         noteInfo.setLabels(labelList);
         List<UserInfo> userInfos = noteDto.getCollaborator() != null ? customMapper.getListVal(noteDto.getCollaborator(), UserInfo.class, userRepo) : new ArrayList<>();
-        if (noteDto.getCollaborator() == null) {
+        if (noteDto.getCollaborator().size() == 0) {
             userInfos.add(createdBy);
         } else if (noteDto.getCollaborator().get(0) == null) {
             userInfos.add(createdBy);
@@ -225,7 +234,7 @@ public class NoteServiceImpl implements NoteService {
             noteInfo.setCreatedBy(createdBy);
         }
         noteInfo = noteRepo.save(noteInfo);
-        return noteInfo.getNoteId();
+        return noteDtoMapper.dto(noteInfo);
     }
 
 }
