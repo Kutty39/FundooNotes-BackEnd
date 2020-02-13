@@ -14,6 +14,7 @@ import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.Publisher;
 import com.blbz.fundoonotebackend.service.UserService;
 import com.blbz.fundoonotebackend.service.UserStatusService;
+import com.blbz.fundoonotebackend.utility.DtoMapper;
 import com.blbz.fundoonotebackend.utility.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -21,11 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final MsgDto msgDto;
     private final BlockedJwt blockedJwt;
     private final UserInfo userInfo;
+    private final DtoMapper dtoMapper;
     @Value("${jwt.expiry.time.sec.day}")
     private int expireForDay;
     @Value("${frontend.server.host}")
@@ -51,7 +53,7 @@ public class UserServiceImpl implements UserService {
             , Publisher publisher
             , JwtUtil jwtUtil
             , MsgDto msgDto
-            , BlockedJwt blockedJwt, UserInfo userInfo) {
+            , BlockedJwt blockedJwt, UserInfo userInfo, DtoMapper dtoMapper) {
         this.userRepo = userRepo;
         this.userStatusService = userStatusService;
         this.util = util;
@@ -60,6 +62,7 @@ public class UserServiceImpl implements UserService {
         this.msgDto = msgDto;
         this.blockedJwt = blockedJwt;
         this.userInfo = userInfo;
+        this.dtoMapper = dtoMapper;
     }
 
 
@@ -84,7 +87,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserInfo getUser(String useremail) {
-        return userRepo.findByEid(useremail);
+        return userRepo.findByUniqKey(useremail);
     }
 
     @Override
@@ -177,10 +180,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserInfo> getAllUser(@RequestHeader("Authorization") String jwtToken) throws  InvalidUserException {
-
+    public List<String> getAllUser(String jwtToken) throws  InvalidUserException {
         if (jwtUtil.validateHeader(jwtToken) != null) {
-            return userRepo.findAll();
+            return userRepo.findAll().stream().map(UserInfo::getEid).collect(Collectors.toList());
         }
         return null;
     }

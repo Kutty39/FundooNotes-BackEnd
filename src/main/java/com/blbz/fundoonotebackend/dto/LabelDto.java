@@ -6,6 +6,5 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 public class LabelDto {
-    private int labelId;
     private String labelText;
 }

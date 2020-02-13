@@ -65,6 +65,11 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.NO_CONTENT.value(), HttpStatus.NO_CONTENT, e.getMessage()));
     }
 
+    @ExceptionHandler(InvalidNoteException.class)
+    public ResponseEntity<?> labelNotFound(InvalidNoteException e) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<?> jwtExpired(ExpiredJwtException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN, e.getMessage()));

@@ -1,6 +1,5 @@
 package com.blbz.fundoonotebackend.service;
 
-import com.blbz.fundoonotebackend.dto.LabelDto;
 import com.blbz.fundoonotebackend.entiry.Label;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.LabelNotFoundException;
@@ -10,11 +9,14 @@ import java.util.List;
 
 @Component
 public interface LabelService {
-    Label createLabel(LabelDto labelDto);
+    String createLabel(String labelText,String jwtToken) throws InvalidUserException;
+    Label createLabelandGet(String labelText,String jwtToken) throws InvalidUserException;
 
-    List<Label> getAllLabels(String jwtToken) throws  InvalidUserException;
+    List<String> getAllLabels(String jwtToken) throws  InvalidUserException;
 
-    Label getLabel(String labelText,String jwtToken) throws LabelNotFoundException,  InvalidUserException;
+    String getLabel(String labelText, String jwtToken) throws LabelNotFoundException,  InvalidUserException;
 
-    Label editLabel(LabelDto labelDto) throws LabelNotFoundException;
+    String editLabel(String oldLabel,String newLabel,String jwtToken) throws LabelNotFoundException, InvalidUserException;
+
+    void deleteLabel(String labelText, String jwtToken) throws InvalidUserException;
 }

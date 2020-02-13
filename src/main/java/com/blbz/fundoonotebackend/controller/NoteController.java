@@ -28,7 +28,13 @@ public class NoteController {
         if(label==null || label.isEmpty()){
             throw new ParameterEmptyException("label text not passed");
         }
-        generalResponse.setResponse(noteService.getNotesByLabel(label,header.replace("Bearer ","")));
+        generalResponse.setResponse(noteService.getNotesByLabel(label,header));
+        return ResponseEntity.ok(generalResponse);
+    }
+
+    @GetMapping("/notes/remainder")
+    public ResponseEntity<?> getNoteByRemainder(@RequestHeader("Authorization") String header) throws  InvalidUserException {
+        generalResponse.setResponse(noteService.getNotesByRemainder(header));
         return ResponseEntity.ok(generalResponse);
     }
 
@@ -37,14 +43,14 @@ public class NoteController {
         if(status==null || status.isEmpty()){
             throw new ParameterEmptyException("status text not passed");
         }
-        generalResponse.setResponse(noteService.getNotesByStatus(status,header.replace("Bearer ","")));
+        generalResponse.setResponse(noteService.getNotesByStatus(status,header));
         return ResponseEntity.ok(generalResponse);
     }
 
 
     @GetMapping("/notes")
     public ResponseEntity<?> getAllNotes( @RequestHeader("Authorization") String header) throws NoteNotFoundException, InvalidUserException {
-        generalResponse.setResponse(noteService.getAllNotes(header.replace("Bearer ","")));
+        generalResponse.setResponse(noteService.getAllNotes(header));
         return ResponseEntity.ok(generalResponse);
     }
 
@@ -53,15 +59,16 @@ public class NoteController {
         if(id==null || id.isEmpty()){
             throw new ParameterEmptyException("id not passed");
         }
-        generalResponse.setResponse(noteService.getNotes(Integer.parseInt(id), header.replace("Bearer ","")));
+        generalResponse.setResponse(noteService.getNotes(Integer.parseInt(id), header));
         return ResponseEntity.ok(generalResponse);
     }
 
     @PostMapping("/notes")
-    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException {
-        if (noteDto.getNoteText() != null || noteDto.getNoteTitle() != null ||
-                noteDto.getNoteRemainder() != null || noteDto.getCollaborator() != null) {
-            NoteDto respNoteDto = noteService.createNote(noteDto, header.replace("Bearer ",""));
+    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException, InvalidNoteException {
+        System.out.println(noteDto);
+        if (!noteDto.getNoteText().equals("") || !noteDto.getNoteTitle().equals("") ||
+                !noteDto.getNoteRemainder().equals("") || noteDto.getCollaborator().size()>0) {
+            NoteDto respNoteDto = noteService.createNote(noteDto, header);
             generalResponse.setResponse(respNoteDto);
             if (respNoteDto !=null) {
                 return ResponseEntity.ok(generalResponse);
@@ -69,9 +76,7 @@ public class NoteController {
                 return ResponseEntity.badRequest().body(generalResponse);
             }
         } else {
-            generalResponse.setResponse("Any one of the fields is mandatory." +
-                    "Title,Note Text, Remainder,Collaborator or Label");
-            return ResponseEntity.badRequest().body(generalResponse);
+            throw new InvalidNoteException();
         }
     }
 

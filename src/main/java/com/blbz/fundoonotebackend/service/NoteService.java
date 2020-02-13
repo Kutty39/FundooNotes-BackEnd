@@ -31,4 +31,6 @@ public interface NoteService {
     NoteDto getNotes(int id, String jwtHeader) throws  InvalidUserException, NoteNotFoundException;
 
     List<NoteDto> getNotesByStatus(String statusText, String jwtHeader) throws  InvalidUserException, NoteStatusNotFoundException;
+
+    List<NoteDto> getNotesByRemainder(String header) throws InvalidUserException;
 }

@@ -11,7 +11,7 @@ import com.blbz.fundoonotebackend.service.CustomMapper;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.LabelService;
 import com.blbz.fundoonotebackend.service.NoteService;
-import com.blbz.fundoonotebackend.utility.NoteDtoMapper;
+import com.blbz.fundoonotebackend.utility.DtoMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class NoteServiceImpl implements NoteService {
     private final ColorRepo colorRepo;
     private final LabelService labelService;
     private final LabelDto labelDto;
-    private final NoteDtoMapper noteDtoMapper;
+    private final DtoMapper noteDtoMapper;
     private NoteInfo noteInfo;
     private NoteDto noteDto;
 
@@ -42,7 +42,7 @@ public class NoteServiceImpl implements NoteService {
     @Autowired
     public NoteServiceImpl(CustomMapper customMapper, NoteRepo noteRepo, NoteInfo noteInfo
             , LabelRepo labelRepo, UserRepo userRepo, JwtUtil jwtUtil, NoteStatusRepo noteStatusRepo,
-                           ColorRepo colorRepo, LabelService labelService, LabelDto labelDto, NoteDtoMapper noteDtoMapper, NoteDto noteDto) {
+                           ColorRepo colorRepo, LabelService labelService, LabelDto labelDto, DtoMapper noteDtoMapper, NoteDto noteDto) {
         this.customMapper = customMapper;
         this.noteRepo = noteRepo;
         this.noteInfo = noteInfo;
@@ -134,7 +134,7 @@ public class NoteServiceImpl implements NoteService {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         Label label = labelRepo.findByUniqKey(labelText);
         if (label != null) {
-            return noteRepo.findByLabelsAndCollaborator(label, userInfo).stream().map(noteDtoMapper::dto).collect(Collectors.toList());
+            return noteRepo.findByLabelsAndCollaborator(label, userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
         }
         throw new LabelNotFoundException("\"" + labelText + "\" not found");
     }
@@ -147,7 +147,7 @@ public class NoteServiceImpl implements NoteService {
         if (noteInfos.size() == 0) {
             throw new NoteNotFoundException();
         }
-        return  noteInfos.stream().map(noteDtoMapper::dto).collect(Collectors.toList());
+        return  noteInfos.stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
 
     }
 
@@ -159,7 +159,7 @@ public class NoteServiceImpl implements NoteService {
         if (noteInfo == null) {
             throw new NoteNotFoundException();
         }
-        return noteDtoMapper.dto(noteInfo);
+        return noteDtoMapper.noteDtoMapper(noteInfo);
     }
 
     @Override
@@ -168,9 +168,15 @@ public class NoteServiceImpl implements NoteService {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
         NoteStatus noteStatus = noteStatusRepo.findByStatusText(statusText);
         if (noteStatus != null) {
-            return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo).stream().map(noteDtoMapper::dto).collect(Collectors.toList());
+            return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
         }
         throw new NoteStatusNotFoundException("\"" + statusText + "\" not found");
+    }
+
+    @Override
+    public List<NoteDto> getNotesByRemainder(String header) throws InvalidUserException {
+        UserInfo userInfo = jwtUtil.validateHeader(header);
+        return noteRepo.findByCollaboratorAndNoteRemainderNotNull(userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
     }
 
     @Override
@@ -193,9 +199,9 @@ public class NoteServiceImpl implements NoteService {
         if (labelList != null) {
             for (int i = 0; i < labelList.size(); i++) {
                 if (labelList.get(i) == null) {
-                    labelDto.setLabelText(noteDto.getLabels().get(i));
+                    //labelDto.setLabelText(noteDto.getLabels().get(i));
                     labelList.remove(i);
-                    labelList.add(i, labelService.createLabel(labelDto));
+                    labelList.add(i, labelService.createLabelandGet(noteDto.getLabels().get(i),jwtHeader));
                 }
                 ++i;
             }
@@ -223,6 +229,7 @@ public class NoteServiceImpl implements NoteService {
         noteInfo.setShowTick(noteDto.isShowTick());
 
         noteInfo.setNoteRemainder(noteDto.getNoteRemainder());
+        System.out.println(noteDto.getNoteRemainder());
         noteInfo.setNoteRemainderLocation(noteDto.getNoteRemainderLocation());
         Date date = Date.from(Instant.now());
 
@@ -234,7 +241,7 @@ public class NoteServiceImpl implements NoteService {
             noteInfo.setCreatedBy(createdBy);
         }
         noteInfo = noteRepo.save(noteInfo);
-        return noteDtoMapper.dto(noteInfo);
+        return noteDtoMapper.noteDtoMapper(noteInfo);
     }
 
 }

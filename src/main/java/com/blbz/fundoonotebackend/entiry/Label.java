@@ -20,6 +20,9 @@ public class Label {
     private int labelId;
     @Column(nullable = false)
     private String labelText;
+    @ManyToOne
+    @JoinColumn(name = "createdBy")
+    private UserInfo createdBy;
    /* @JsonIgnore
     @ManyToMany(mappedBy = "labels")
     private List<NoteInfo> noteInfos;*/

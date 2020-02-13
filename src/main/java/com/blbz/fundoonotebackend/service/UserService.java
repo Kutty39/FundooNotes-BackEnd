@@ -22,5 +22,5 @@ public interface UserService {
     String forgotPasswordMail(String email) throws Exception;
     void updatePassword(String jwt,String pas);
 
-    List<UserInfo> getAllUser(String jwtToken) throws Exception;
+    List<String> getAllUser(String jwtToken) throws Exception;
 }

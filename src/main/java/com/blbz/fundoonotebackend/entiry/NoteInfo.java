@@ -23,7 +23,7 @@ public class NoteInfo {
     private int noteId;
     private String noteTitle;
     private String noteText;
-    private Date noteRemainder;
+    private String noteRemainder;
     private String noteRemainderLocation;
     private boolean showTick = false;
     private Date noteCreatedOn;

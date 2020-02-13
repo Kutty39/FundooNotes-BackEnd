@@ -1,6 +1,5 @@
 package com.blbz.fundoonotebackend.controller;
 
-import com.blbz.fundoonotebackend.dto.LabelDto;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.LabelNotFoundException;
 import com.blbz.fundoonotebackend.exception.ParameterEmptyException;
@@ -24,7 +23,7 @@ public class LabelController {
 
     @GetMapping
     public ResponseEntity<?> getAllLabels(@RequestHeader("Authorization") String header) throws  InvalidUserException {
-        generalResponse.setResponse(labelService.getAllLabels(header.replace("Bearer ","")));
+        generalResponse.setResponse(labelService.getAllLabels(header));
         return ResponseEntity.ok(generalResponse);
     }
 
@@ -33,18 +32,24 @@ public class LabelController {
         if(label==null || label.isEmpty()){
             throw new ParameterEmptyException("label text not passed");
         }
-        generalResponse.setResponse(labelService.getLabel(label,header.replace("Bearer ","")));
+        generalResponse.setResponse(labelService.getLabel(label,header));
         return ResponseEntity.ok(generalResponse);
     }
 
     @PostMapping
-    public ResponseEntity<?> createLabel(LabelDto labelDto){
-        generalResponse.setResponse(labelService.createLabel(labelDto));
+    public ResponseEntity<?> createLabel(@RequestParam String labelText, @RequestHeader("Authorization") String header) throws InvalidUserException {
+        generalResponse.setResponse(labelService.createLabel(labelText,header));
         return ResponseEntity.ok(generalResponse);
     }
     @PutMapping
-    public ResponseEntity<?> editLabel(@RequestBody LabelDto labelDto) throws  LabelNotFoundException {
-        generalResponse.setResponse(labelService.editLabel(labelDto));
+    public ResponseEntity<?> editLabel(String oldLabel,String newLabel, @RequestHeader("Authorization") String header) throws LabelNotFoundException, InvalidUserException {
+        generalResponse.setResponse(labelService.editLabel(oldLabel,newLabel,header));
+        return ResponseEntity.ok(generalResponse);
+    }
+    @DeleteMapping("/{labelText}")
+    public ResponseEntity<?> deleteLabel(@PathVariable String labelText,@RequestHeader("Authorization") String header) throws InvalidUserException {
+        labelService.deleteLabel(labelText,header);
+        generalResponse.setResponse("Label Deleted");
         return ResponseEntity.ok(generalResponse);
     }
 }

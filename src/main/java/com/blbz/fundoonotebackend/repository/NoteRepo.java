@@ -20,4 +20,5 @@ public interface NoteRepo extends JpaRepository<NoteInfo,Integer> {
     NoteInfo findByCollaboratorAndNoteId(UserInfo userInfo,int id);
     List<NoteInfo> findByLabelsAndCollaborator(Label label, UserInfo userInfo);
     List<NoteInfo> findByNoteStatusAndCollaborator(NoteStatus noteStatus,UserInfo userInfo);
+    List<NoteInfo> findByCollaboratorAndNoteRemainderNotNull(UserInfo userInfo);
 }

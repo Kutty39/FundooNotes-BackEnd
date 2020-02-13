@@ -1,19 +1,18 @@
 package com.blbz.fundoonotebackend.serviceimpl;
 
-import com.blbz.fundoonotebackend.dto.LabelDto;
 import com.blbz.fundoonotebackend.entiry.Label;
+import com.blbz.fundoonotebackend.entiry.UserInfo;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.LabelNotFoundException;
 import com.blbz.fundoonotebackend.repository.LabelRepo;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.LabelService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class LabelServiceImpl implements LabelService {
@@ -29,39 +28,56 @@ public class LabelServiceImpl implements LabelService {
     }
 
     @Override
-    public Label createLabel(LabelDto labelDto) {
-        BeanUtils.copyProperties(labelDto, label);
+    public String createLabel(String labelText,String jwtToken) throws InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
+        label.setLabelText(labelText);
+        label.setCreatedBy(userInfo);
+        return labelRepo.save(label).getLabelText();
+    }
+
+    @Override
+    public Label createLabelandGet(String labelText,String jwtToken) throws InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
+        label.setLabelText(labelText);
+        label.setCreatedBy(userInfo);
         return labelRepo.save(label);
     }
 
     @Override
-    public List<Label> getAllLabels(@RequestHeader("Authorization") String jwtToken) throws  InvalidUserException {
-        jwtUtil.validateHeader(jwtToken);
-        return labelRepo.findAll();
+    public List<String> getAllLabels(String jwtToken) throws  InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
+        return labelRepo.findByCreatedBy(userInfo).stream().map(Label::getLabelText).collect(Collectors.toList());
     }
 
     @Override
-    public Label getLabel(String labelText, @RequestHeader("Authorization") String jwtToken) throws LabelNotFoundException,  InvalidUserException {
-        jwtUtil.validateHeader(jwtToken);
+    public String getLabel(String labelText, String jwtToken) throws LabelNotFoundException,  InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
         if (labelText != null) {
-            label = labelRepo.findByUniqKey(labelText);
+            label = labelRepo.findByCreatedByAndLabelText(userInfo,labelText);
             if(label ==null){
                 throw new LabelNotFoundException();
             }
-            return label;
+            return label.getLabelText();
         }
         throw new LabelNotFoundException();
     }
 
     @Override
-    public Label editLabel(LabelDto labelDto) throws LabelNotFoundException {
-        Optional<Label> label1=labelRepo.findById(labelDto.getLabelId());
+    public String editLabel(String oldLabel,String newLabel,String jwtToken) throws LabelNotFoundException, InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
+        Optional<Label> label1= Optional.ofNullable(labelRepo.findByCreatedByAndLabelText(userInfo,oldLabel));
         if(label1.isPresent()){
-            label1.get().setLabelText(labelDto.getLabelText());
+            label1.get().setLabelText(newLabel);
             labelRepo.save(label1.get());
-            return label1.get();
+            return newLabel;
         }
         throw new LabelNotFoundException();
+    }
+
+    @Override
+    public void deleteLabel(String labelText, String jwtToken) throws InvalidUserException {
+        UserInfo userInfo=jwtUtil.validateHeader(jwtToken);
+        labelRepo.deleteByCreatedByAndLabelText(userInfo,labelText);
     }
 
 }
