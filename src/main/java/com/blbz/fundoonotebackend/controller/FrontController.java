@@ -5,12 +5,15 @@ import com.blbz.fundoonotebackend.dto.RegisterDto;
 import com.blbz.fundoonotebackend.dto.ResetPassDto;
 import com.blbz.fundoonotebackend.exception.InvalidTokenException;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
+import com.blbz.fundoonotebackend.exception.PicNotFoundException;
 import com.blbz.fundoonotebackend.exception.TokenExpiredException;
 import com.blbz.fundoonotebackend.responce.GeneralResponse;
+import com.blbz.fundoonotebackend.service.S3Service;
 import com.blbz.fundoonotebackend.service.UserService;
 import com.blbz.fundoonotebackend.utility.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,6 +23,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,13 +35,15 @@ public class FrontController {
 
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final S3Service s3Service;
     private final GeneralResponse generalResponse;
     private final Util util;
 
     @Autowired
-    public FrontController(UserService userService, AuthenticationManager authenticationManager, GeneralResponse generalResponse, Util util) {
+    public FrontController(UserService userService, AuthenticationManager authenticationManager, S3Service s3Service, GeneralResponse generalResponse, Util util) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
+        this.s3Service = s3Service;
         this.generalResponse = generalResponse;
         this.util = util;
     }
@@ -49,10 +55,12 @@ public class FrontController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid@RequestBody LoginDto loginDto,BindingResult bindingResult) throws Exception {
-       util.validAndThrow(bindingResult);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginDto loginDto, BindingResult bindingResult) throws Exception {
+        util.validAndThrow(bindingResult);
         try {
-            if(!userService.checkEmail(loginDto.getUsername())){throw new InvalidUserException("Bad credential(Username or Password is wrong)");}
+            if (!userService.checkEmail(loginDto.getUsername())) {
+                throw new InvalidUserException("Bad credential(Username or Password is wrong)");
+            }
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
             );
@@ -79,7 +87,7 @@ public class FrontController {
         if (errors.size() > 0) {
             errorDetail.put("Errors", errors);
             log.info(String.valueOf(errors));
-            return ResponseEntity.badRequest().body(errorDetail);
+            throw new Exception(String.valueOf(errorDetail));
         }
         //try {
         return ResponseEntity.ok().body(userService.registerUser(regData));
@@ -101,7 +109,7 @@ public class FrontController {
         return ResponseEntity.ok().body(generalResponse);
     }
 
-    @GetMapping("/blockjwt/{jwt}")
+    @PutMapping("/blockjwt/{jwt}")
     public ResponseEntity<?> blockJwt(@PathVariable String jwt) {
         userService.blockedJwt(jwt);
         generalResponse.setResponse(true);
@@ -119,6 +127,7 @@ public class FrontController {
         }
 
     }
+
     @PostMapping("/resetpassword")
     public ResponseEntity<?> resetPass(@Valid @RequestBody ResetPassDto resetPassDto, BindingResult bindingResult, @RequestHeader("Authorization") String header) {
         util.validAndThrow(bindingResult);
@@ -131,10 +140,22 @@ public class FrontController {
         return ResponseEntity.ok().body(generalResponse);
     }
 
-   /* @GetMapping("/reset/{jwt}")
-    public ResponseEntity<?> reset(@PathVariable String jwt) {
-        generalResponse.setResponse("please send your password and conform password to http://localhost:8080/api/resetpassword\nusing post with JWT:" + jwt +
-                " this token in header (parameters \n{\"password\":\"your password\",\n\"conpassword\":\"your conform password\"\n})");
-        return ResponseEntity.ok(generalResponse);
-    }*/
+    @PostMapping("/api/uploadpic")
+    public ResponseEntity<?> uploadPic(@RequestParam String filePath, @RequestHeader("Authorization") String header) throws InvalidUserException {
+        s3Service.uploadFile(filePath, header.replace("Bearer ", ""));
+        generalResponse.setResponse("Uploaded");
+        return ResponseEntity.ok().body(generalResponse);
+    }
+
+    @PostMapping(value = "/api/uploadFile", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<?> uploadPicfile(@RequestParam String file, @RequestHeader("Authorization") String header) throws InvalidUserException, PicNotFoundException, IOException {
+        generalResponse.setResponse(s3Service.uploadFileWithFile(file, header.replace("Bearer ", "")));
+        return ResponseEntity.ok().body(generalResponse);
+    }
+
+    @GetMapping("/api/downloadpic")
+    public ResponseEntity<?> downloadPic(@RequestHeader("Authorization") String header) throws InvalidUserException, PicNotFoundException {
+        generalResponse.setResponse(s3Service.downloadFile(header.replace("Bearer ", "")).toString());
+        return ResponseEntity.ok().body(generalResponse);
+    }
 }

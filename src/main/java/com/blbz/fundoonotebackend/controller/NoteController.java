@@ -1,9 +1,6 @@
 package com.blbz.fundoonotebackend.controller;
 
-import com.blbz.fundoonotebackend.dto.NoteDto;
-import com.blbz.fundoonotebackend.dto.NoteStatusDto;
-import com.blbz.fundoonotebackend.dto.NotesDeleteDto;
-import com.blbz.fundoonotebackend.dto.NotesStatusDto;
+import com.blbz.fundoonotebackend.dto.*;
 import com.blbz.fundoonotebackend.exception.*;
 import com.blbz.fundoonotebackend.responce.GeneralResponse;
 import com.blbz.fundoonotebackend.service.NoteService;
@@ -29,13 +26,13 @@ public class NoteController {
             throw new ParameterEmptyException("label text not passed");
         }
         generalResponse.setResponse(noteService.getNotesByLabel(label,header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @GetMapping("/notes/remainder")
     public ResponseEntity<?> getNoteByRemainder(@RequestHeader("Authorization") String header) throws  InvalidUserException {
         generalResponse.setResponse(noteService.getNotesByRemainder(header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @GetMapping("/notes/status/{status}")
@@ -44,14 +41,14 @@ public class NoteController {
             throw new ParameterEmptyException("status text not passed");
         }
         generalResponse.setResponse(noteService.getNotesByStatus(status,header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
 
     @GetMapping("/notes")
     public ResponseEntity<?> getAllNotes( @RequestHeader("Authorization") String header) throws NoteNotFoundException, InvalidUserException {
         generalResponse.setResponse(noteService.getAllNotes(header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @GetMapping("/notes/{id}")
@@ -60,20 +57,20 @@ public class NoteController {
             throw new ParameterEmptyException("id not passed");
         }
         generalResponse.setResponse(noteService.getNotes(Integer.parseInt(id), header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @PostMapping("/notes")
-    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException, InvalidNoteException {
+    public ResponseEntity<?> createNote(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws Exception {
         System.out.println(noteDto);
         if (!noteDto.getNoteText().equals("") || !noteDto.getNoteTitle().equals("") ||
                 !noteDto.getNoteRemainder().equals("") || noteDto.getCollaborator().size()>0) {
             NoteDto respNoteDto = noteService.createNote(noteDto, header);
             generalResponse.setResponse(respNoteDto);
             if (respNoteDto !=null) {
-                return ResponseEntity.ok(generalResponse);
+                return ResponseEntity.ok().body(generalResponse);
             } else {
-                return ResponseEntity.badRequest().body(generalResponse);
+                throw new Exception("Something went wrong");
             }
         } else {
             throw new InvalidNoteException();
@@ -81,36 +78,24 @@ public class NoteController {
     }
 
     @PutMapping("/notes")
-    public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws InvalidUserException {
+    public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws Exception {
         NoteDto respNoteDto = noteService.editNote(noteDto, header.replace("Bearer ",""));
         if (respNoteDto !=null) {
             generalResponse.setResponse(respNoteDto);
             return ResponseEntity.ok().body(generalResponse);
         } else {
-            generalResponse.setResponse("Something went wrong");
-            return ResponseEntity.badRequest().body(generalResponse);
+           throw new Exception("Something went wrong");
         }
     }
 
     @PutMapping("/note/status")
-    public ResponseEntity<?> updatedStatus(@RequestBody NoteStatusDto noteStatusDto, @RequestHeader("Authorization") String header) throws InvalidUserException, InvalidNoteStatus, NoteNotFoundException {
+    public ResponseEntity<?> updatedStatus(@RequestBody NoteStatusDto noteStatusDto, @RequestHeader("Authorization") String header) throws Exception {
         int noteID = noteService.updateStatus(noteStatusDto, header.replace("Bearer ",""));
         generalResponse.setResponse(noteID);
         if (noteID > 0) {
-            return ResponseEntity.ok(generalResponse);
+            return ResponseEntity.ok().body(generalResponse);
         } else {
-            return ResponseEntity.badRequest().body(generalResponse);
-        }
-    }
-
-    @PutMapping("/notes/status")
-    public ResponseEntity<?> updatedStatus(@RequestBody NotesStatusDto notesStatusDto, @RequestHeader("Authorization") String header) throws InvalidUserException, InvalidNoteStatus {
-        int noteId = noteService.updateStatus(notesStatusDto, header.replace("Bearer ",""));
-        generalResponse.setResponse(noteId);
-        if (noteId > 0) {
-            return ResponseEntity.ok(generalResponse);
-        } else {
-            return ResponseEntity.badRequest().body(generalResponse);
+            throw new Exception("Something went wrong");
         }
     }
 
@@ -121,13 +106,13 @@ public class NoteController {
         }
         int noteId = noteService.deleteNote(id);
         generalResponse.setResponse(noteId);
-        return ResponseEntity.badRequest().body(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @DeleteMapping("/notes")
     public ResponseEntity<?> deleteNote(@RequestBody NotesDeleteDto notesDeleteDto) throws NoteNotFoundException {
         int noteID = noteService.deleteNotes(notesDeleteDto.getNoteId());
         generalResponse.setResponse(noteID);
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 }

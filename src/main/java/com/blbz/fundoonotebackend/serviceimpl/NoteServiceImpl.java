@@ -1,9 +1,6 @@
 package com.blbz.fundoonotebackend.serviceimpl;
 
-import com.blbz.fundoonotebackend.dto.LabelDto;
-import com.blbz.fundoonotebackend.dto.NoteDto;
-import com.blbz.fundoonotebackend.dto.NoteStatusDto;
-import com.blbz.fundoonotebackend.dto.NotesStatusDto;
+import com.blbz.fundoonotebackend.dto.*;
 import com.blbz.fundoonotebackend.entiry.*;
 import com.blbz.fundoonotebackend.exception.*;
 import com.blbz.fundoonotebackend.repository.*;
@@ -147,7 +144,7 @@ public class NoteServiceImpl implements NoteService {
         if (noteInfos.size() == 0) {
             throw new NoteNotFoundException();
         }
-        return  noteInfos.stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+        return noteInfos.stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
 
     }
 
@@ -174,6 +171,7 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    @Transactional
     public List<NoteDto> getNotesByRemainder(String header) throws InvalidUserException {
         UserInfo userInfo = jwtUtil.validateHeader(header);
         return noteRepo.findByCollaboratorAndNoteRemainderNotNull(userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
@@ -201,7 +199,7 @@ public class NoteServiceImpl implements NoteService {
                 if (labelList.get(i) == null) {
                     //labelDto.setLabelText(noteDto.getLabels().get(i));
                     labelList.remove(i);
-                    labelList.add(i, labelService.createLabelandGet(noteDto.getLabels().get(i),jwtHeader));
+                    labelList.add(i, labelService.createLabelandGet(noteDto.getLabels().get(i), jwtHeader));
                 }
                 ++i;
             }

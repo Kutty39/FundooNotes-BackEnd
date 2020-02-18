@@ -40,8 +40,11 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
         String header = request.getHeader("Authorization");
+        System.out.println(request.getRequestURI());
+        System.out.println(request.getPathInfo());
+        System.out.println("header : " +header);
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            String token = header.replace("Bearer ","");
             jwtUtil.loadJwt(token);
             if (!blockedJwt.getBJwt().contains(token)) {
                 if (jwtUtil.isValid()) {

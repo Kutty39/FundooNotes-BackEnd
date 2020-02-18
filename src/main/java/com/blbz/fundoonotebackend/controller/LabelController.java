@@ -24,7 +24,7 @@ public class LabelController {
     @GetMapping
     public ResponseEntity<?> getAllLabels(@RequestHeader("Authorization") String header) throws  InvalidUserException {
         generalResponse.setResponse(labelService.getAllLabels(header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @GetMapping("/{label}")
@@ -33,23 +33,23 @@ public class LabelController {
             throw new ParameterEmptyException("label text not passed");
         }
         generalResponse.setResponse(labelService.getLabel(label,header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 
     @PostMapping
     public ResponseEntity<?> createLabel(@RequestParam String labelText, @RequestHeader("Authorization") String header) throws InvalidUserException {
         generalResponse.setResponse(labelService.createLabel(labelText,header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
     @PutMapping
-    public ResponseEntity<?> editLabel(String oldLabel,String newLabel, @RequestHeader("Authorization") String header) throws LabelNotFoundException, InvalidUserException {
+    public ResponseEntity<?> editLabel(@RequestParam String oldLabel,@RequestParam String newLabel, @RequestHeader("Authorization") String header) throws LabelNotFoundException, InvalidUserException {
         generalResponse.setResponse(labelService.editLabel(oldLabel,newLabel,header));
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
     @DeleteMapping("/{labelText}")
     public ResponseEntity<?> deleteLabel(@PathVariable String labelText,@RequestHeader("Authorization") String header) throws InvalidUserException {
         labelService.deleteLabel(labelText,header);
         generalResponse.setResponse("Label Deleted");
-        return ResponseEntity.ok(generalResponse);
+        return ResponseEntity.ok().body(generalResponse);
     }
 }

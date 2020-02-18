@@ -76,8 +76,8 @@ public class JwtUtilImpl implements JwtUtil {
 
     @Override
     @Caching(evict = {
-    @CacheEvict(value = "jwtutil",key = "#token",condition = "#result.valid!=true"),
-            @CacheEvict(value = "jwt",key = "#token",condition = "#result.valid!=true")})
+    @CacheEvict(value = "jwtutil",key = "#token",condition = "#result.isValid()!=true"),
+            @CacheEvict(value = "jwt",key = "#token",condition = "#result.isValid()!=true")})
     public JwtUtil loadJwt(String token) throws ExpiredJwtException {
         claims = Jwts.parser().setSigningKey(MY_KEY).parseClaimsJws(token).getBody();
         userEmail = claims.getSubject();

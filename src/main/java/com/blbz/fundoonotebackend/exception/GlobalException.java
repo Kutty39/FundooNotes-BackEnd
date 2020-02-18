@@ -80,6 +80,11 @@ public class GlobalException extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.NO_CONTENT.value(), HttpStatus.NO_CONTENT, e.getMessage()));
     }
 
+    @ExceptionHandler(PicNotFoundException.class)
+    public ResponseEntity<?> noteStatusNotFound(PicNotFoundException e) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.NO_CONTENT.value(), HttpStatus.NO_CONTENT, e.getMessage()));
+    }
+
     @ExceptionHandler(ParameterEmptyException.class)
     public ResponseEntity<?> noteStatusNotFound(ParameterEmptyException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST, e.getMessage()));
