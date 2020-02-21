@@ -1,9 +1,12 @@
 package com.blbz.fundoonotebackend.serviceimpl;
 
-import com.blbz.fundoonotebackend.dto.*;
+import com.blbz.fundoonotebackend.dto.NoteDto;
+import com.blbz.fundoonotebackend.dto.NoteStatusDto;
+import com.blbz.fundoonotebackend.dto.NotesStatusDto;
 import com.blbz.fundoonotebackend.entiry.*;
 import com.blbz.fundoonotebackend.exception.*;
-import com.blbz.fundoonotebackend.repository.*;
+import com.blbz.fundoonotebackend.repository.elasticsearch.NoteElRepo;
+import com.blbz.fundoonotebackend.repository.jpa.*;
 import com.blbz.fundoonotebackend.service.CustomMapper;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.LabelService;
@@ -18,30 +21,33 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
 public class NoteServiceImpl implements NoteService {
     private final CustomMapper customMapper;
     private final NoteRepo noteRepo;
+    private final NoteElRepo noteElRepo;
     private final LabelRepo labelRepo;
     private final UserRepo userRepo;
     private final JwtUtil jwtUtil;
     private final NoteStatusRepo noteStatusRepo;
     private final ColorRepo colorRepo;
     private final LabelService labelService;
-    private final LabelDto labelDto;
     private final DtoMapper noteDtoMapper;
     private NoteInfo noteInfo;
-    private NoteDto noteDto;
+    private NoteInfoEl noteInfoEl;
 
 
     @Autowired
-    public NoteServiceImpl(CustomMapper customMapper, NoteRepo noteRepo, NoteInfo noteInfo
-            , LabelRepo labelRepo, UserRepo userRepo, JwtUtil jwtUtil, NoteStatusRepo noteStatusRepo,
-                           ColorRepo colorRepo, LabelService labelService, LabelDto labelDto, DtoMapper noteDtoMapper, NoteDto noteDto) {
+    public NoteServiceImpl(CustomMapper customMapper, NoteRepo noteRepo, NoteElRepo noteElRepo, NoteInfo noteInfo
+            , LabelRepo labelRepo, UserRepo userRepo, JwtUtil jwtUtil, NoteStatusRepo noteStatusRepo
+            , ColorRepo colorRepo, LabelService labelService, DtoMapper noteDtoMapper, NoteInfoEl noteInfoEl) {
         this.customMapper = customMapper;
         this.noteRepo = noteRepo;
+        this.noteElRepo = noteElRepo;
         this.noteInfo = noteInfo;
         this.labelRepo = labelRepo;
         this.jwtUtil = jwtUtil;
@@ -49,9 +55,8 @@ public class NoteServiceImpl implements NoteService {
         this.noteStatusRepo = noteStatusRepo;
         this.colorRepo = colorRepo;
         this.labelService = labelService;
-        this.labelDto = labelDto;
         this.noteDtoMapper = noteDtoMapper;
-        this.noteDto = noteDto;
+        this.noteInfoEl = noteInfoEl;
     }
 
     @Override
@@ -65,9 +70,11 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int deleteNote(int noteId) throws NoteNotFoundException {
-        if (noteRepo.findById(noteId).isPresent()) {
+    public int deleteNote(int noteId, String jwtHeader) throws NoteNotFoundException, InvalidUserException {
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
+        if (noteElRepo.findByCollaboratorAndNoteId(userInfo.getEid(), noteId) != null) {
             noteRepo.deleteById(noteId);
+            noteElRepo.deleteById(noteId);
             return 1;
         } else {
             throw new NoteNotFoundException();
@@ -75,31 +82,50 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public int deleteNotes(List<Integer> noteId) throws NoteNotFoundException {
-        List<NoteInfo> noteInfos = noteRepo.findAllById(noteId);
-        noteRepo.deleteAll(noteInfos);
-        if (noteInfos.size() == 0) {
-            throw new NoteNotFoundException();
-        }
-        return noteInfos.size();
+    public int deleteNotes(List<Integer> noteIds, String jwtHeader) throws NoteNotFoundException, InvalidUserException {
+        AtomicInteger count = new AtomicInteger();
+        UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
+        noteElRepo.findAllById(noteIds).forEach(noteInfoEl1 -> {
+            if (noteElRepo.findByCollaboratorAndNoteId(userInfo.getEid(), noteInfoEl1.getNoteId()) != null) {
+                noteElRepo.delete(noteInfoEl1);
+                noteRepo.deleteById(noteInfoEl1.getNoteId());
+                count.incrementAndGet();
+            }
+        });
+        return count.get();
     }
 
     @Override
     public int updateStatus(NotesStatusDto notesStatusDto, String jwtHeader) throws InvalidUserException, InvalidNoteStatus {
 
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        List<NoteInfo> noteInfos = noteRepo.findAllById(notesStatusDto.getNoteId());
+        List<NoteInfoEl> noteInfoEls = notesStatusDto.getNoteId().stream().map(id -> noteElRepo.findByCollaboratorAndNoteId(userInfo.getEid(), id)).filter(Objects::nonNull).collect(Collectors.toList());
         NoteStatus noteStatus = noteStatusRepo.findByStatusText(notesStatusDto.getStatus());
         if (noteStatus != null) {
             List<NoteInfo> noteInfos1 = new ArrayList<>();
-            for (NoteInfo info : noteInfos) {
-                info.setNoteStatus(noteStatus);
-                info.setEditedBy(userInfo);
-                info.setNoteLastEditedOn(Date.from(Instant.now()));
-                noteInfos1.add(info);
+            for (NoteInfoEl noteInfoEl : noteInfoEls) {
+                noteInfoEl.setNoteStatus(noteStatus);
+                noteInfoEl.setEditedBy(userInfo);
+                noteInfoEl.setNoteLastEditedOn(Date.from(Instant.now()));
+                BeanUtils.copyProperties(noteInfoEl, noteInfo);
+                //noteInfo.setCollaborator(noteInfoEl.getCollaborator());
+                noteInfos1.add(noteInfo);
+
+
             }
-            noteRepo.saveAll(noteInfos1);
-            return noteInfos.size();
+            noteInfoEls = noteInfoEls.stream().map(noteInfoEl1 -> {
+                noteInfoEl.setNoteStatus(noteStatus);
+                noteInfoEl.setEditedBy(userInfo);
+                noteInfoEl.setNoteLastEditedOn(Date.from(Instant.now()));
+                return noteInfoEl;
+            }).collect(Collectors.toList());
+            noteRepo.saveAll(noteInfoEls.stream().map(noteInfoEl1 -> {
+                NoteInfo noteInfo = new NoteInfo();
+                BeanUtils.copyProperties(noteInfoEl1, noteInfo);
+                return noteInfo;
+            }).collect(Collectors.toList()));
+            noteElRepo.saveAll(noteInfoEls);
+            return noteInfoEls.size();
         }
         throw new InvalidNoteStatus();
     }
@@ -108,15 +134,17 @@ public class NoteServiceImpl implements NoteService {
     public int updateStatus(NoteStatusDto noteStatusDto, String jwtHeader) throws InvalidUserException, NoteNotFoundException, InvalidNoteStatus {
 
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        noteInfo = noteRepo.findByUniqKey(noteStatusDto.getNoteId());
-        if (noteInfo != null) {
+        noteInfoEl = noteElRepo.findByCollaboratorAndNoteId(userInfo.getEid(), noteStatusDto.getNoteId());
+        if (noteInfoEl != null) {
             NoteStatus noteStatus = noteStatusRepo.findByStatusText(noteStatusDto.getStatus());
             if (noteStatus != null) {
-                noteInfo.setNoteStatus(noteStatus);
-                noteInfo.setEditedBy(userInfo);
-                noteInfo.setNoteLastEditedOn(Date.from(Instant.now()));
+                noteInfoEl.setNoteStatus(noteStatus);
+                noteInfoEl.setEditedBy(userInfo);
+                noteInfoEl.setNoteLastEditedOn(Date.from(Instant.now()));
+                noteElRepo.save(noteInfoEl);
+                BeanUtils.copyProperties(noteInfoEl,noteInfo);
                 noteRepo.save(noteInfo);
-                return noteInfo.getNoteId();
+                return noteInfoEl.getNoteId();
             } else {
                 throw new InvalidNoteStatus();
             }
@@ -129,22 +157,23 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public List<NoteDto> getNotesByLabel(String labelText, String jwtHeader) throws LabelNotFoundException, InvalidUserException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        Label label = labelRepo.findByUniqKey(labelText);
+        Label label = labelRepo.findByCreatedByAndLabelText(userInfo, labelText);
         if (label != null) {
-            return noteRepo.findByLabelsAndCollaborator(label, userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+            return noteElRepo.findByLabelsAndCollaborator(label.getLabelText(), userInfo.getEid()).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
         }
-        throw new LabelNotFoundException("\"" + labelText + "\" not found");
+        //throw new LabelNotFoundException("\"" + labelText + "\" not found");
+        return null;
     }
 
     @Override
     @Transactional
     public List<NoteDto> getAllNotes(String jwtHeader) throws InvalidUserException, NoteNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        List<NoteInfo> noteInfos = noteRepo.findByCollaborator(userInfo);
-        if (noteInfos.size() == 0) {
-            throw new NoteNotFoundException();
+        List<NoteInfoEl> noteInfoEls = noteElRepo.findByCollaborator(userInfo.getEid());
+        if (noteInfoEls.size() == 0) {
+            return null;
         }
-        return noteInfos.stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+        return noteInfoEls.stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
 
     }
 
@@ -152,9 +181,9 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public NoteDto getNotes(int id, String jwtHeader) throws InvalidUserException, NoteNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        NoteInfo noteInfo = noteRepo.findByCollaboratorAndNoteId(userInfo, id);
+        NoteInfoEl noteInfo = noteElRepo.findByCollaboratorAndNoteId(userInfo.getEid(), id);
         if (noteInfo == null) {
-            throw new NoteNotFoundException();
+            return null;
         }
         return noteDtoMapper.noteDtoMapper(noteInfo);
     }
@@ -163,18 +192,24 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public List<NoteDto> getNotesByStatus(String statusText, String jwtHeader) throws InvalidUserException, NoteStatusNotFoundException {
         UserInfo userInfo = jwtUtil.validateHeader(jwtHeader);
-        NoteStatus noteStatus = noteStatusRepo.findByStatusText(statusText);
-        if (noteStatus != null) {
-            return noteRepo.findByNoteStatusAndCollaborator(noteStatus, userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+        NoteStatus noteStatusEl = noteStatusRepo.findByStatusText(statusText);
+        if (noteStatusEl != null) {
+            return noteElRepo.findByNoteStatusAndCollaborator(statusText, userInfo.getEid()).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
         }
-        throw new NoteStatusNotFoundException("\"" + statusText + "\" not found");
+        return null;
     }
 
     @Override
     @Transactional
     public List<NoteDto> getNotesByRemainder(String header) throws InvalidUserException {
         UserInfo userInfo = jwtUtil.validateHeader(header);
-        return noteRepo.findByCollaboratorAndNoteRemainderNotNull(userInfo).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+        return noteElRepo.findByCollaboratorAndNoteRemainderNotNull(userInfo.getEid()).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<NoteDto> searchAll(String text, String header) throws InvalidUserException {
+        UserInfo userInfo = jwtUtil.validateHeader(header);
+        return noteElRepo.findAny(text,userInfo.getEid()).stream().map(noteDtoMapper::noteDtoMapper).collect(Collectors.toList());
     }
 
     @Override
@@ -238,8 +273,12 @@ public class NoteServiceImpl implements NoteService {
             noteInfo.setNoteCreatedOn(date);
             noteInfo.setCreatedBy(createdBy);
         }
-        noteInfo = noteRepo.save(noteInfo);
-        return noteDtoMapper.noteDtoMapper(noteInfo);
+        noteRepo.save(noteInfo);
+
+        BeanUtils.copyProperties(noteInfo, noteInfoEl);
+        noteInfoEl.setCollaborator(noteInfo.getCollaborator());
+        noteElRepo.save(noteInfoEl);
+        return noteDtoMapper.noteDtoMapper(noteInfoEl);
     }
 
 }

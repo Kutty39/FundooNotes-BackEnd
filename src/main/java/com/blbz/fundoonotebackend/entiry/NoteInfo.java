@@ -28,7 +28,7 @@ public class NoteInfo {
     private boolean showTick = false;
     private Date noteCreatedOn;
     private Date noteLastEditedOn;
-    private boolean isPinned = false;
+    private boolean pinned = false;
 
     @OneToOne
     @JoinColumn(name = "colors")

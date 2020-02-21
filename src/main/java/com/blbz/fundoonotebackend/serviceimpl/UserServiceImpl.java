@@ -9,7 +9,7 @@ import com.blbz.fundoonotebackend.entiry.UserStatus;
 import com.blbz.fundoonotebackend.exception.InvalidTokenException;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.TokenExpiredException;
-import com.blbz.fundoonotebackend.repository.UserRepo;
+import com.blbz.fundoonotebackend.repository.jpa.UserRepo;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.Publisher;
 import com.blbz.fundoonotebackend.service.UserService;
@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -81,7 +83,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public boolean checkEmail(String email) {
-        return userRepo.findByEid(email) != null;
+        return userRepo.findByUniqKey(email) != null;
     }
 
     @Override
@@ -92,7 +94,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean passwordMatcher(LoginDto loginDto) {
-        UserInfo userInfo = userRepo.findByEid(loginDto.getUsername());
+        UserInfo userInfo = userRepo.findByUniqKey(loginDto.getUsername());
         if (userInfo != null) {
             return util.passwordMatcher(loginDto.getPassword(), userInfo.getPas());
         } else {
@@ -117,7 +119,7 @@ public class UserServiceImpl implements UserService {
         jwtUtil.loadJwt(jwt);
         if (jwtUtil.isValid()) {
             if (jwtUtil.getClaims().get("url").equals("activate")) {
-                UserInfo userInfo = userRepo.findByEid(jwtUtil.userName());
+                UserInfo userInfo = userRepo.findByUniqKey(jwtUtil.userName());
                 if (userInfo.getUserStatus().getStatusText().equals("Active")) {
                     return "Account already activated";
                 } else {
@@ -138,7 +140,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public String loginUser(String userEmail) throws Exception {
-        UserInfo userInfo = userRepo.findByEid(userEmail);
+        UserInfo userInfo = userRepo.findByUniqKey(userEmail);
         if(userInfo==null){
             throw new InvalidUserException("Email or Password is wrong");
         }
@@ -161,7 +163,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String forgotPasswordMail(String email) throws Exception {
-        UserInfo userInfo = userRepo.findByEid(email);
+        UserInfo userInfo = userRepo.findByUniqKey(email);
         msgDto.setSubject("Reset password");
         msgDto.setName(userInfo.getFname() + " " + userInfo.getLname());
         msgDto.setEmail(email);
@@ -173,7 +175,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updatePassword(String jwt, String pas) {
         jwtUtil.loadJwt(jwt);
-        UserInfo userInfo = userRepo.findByEid(jwtUtil.userName());
+        UserInfo userInfo = userRepo.findByUniqKey(jwtUtil.userName());
         userInfo.setPas(util.encoder(pas));
         blockedJwt(jwt);
         userRepo.save(userInfo);
@@ -182,7 +184,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<String> getAllUser(String jwtToken) throws  InvalidUserException {
         if (jwtUtil.validateHeader(jwtToken) != null) {
-            return userRepo.findAll().stream().map(UserInfo::getEid).collect(Collectors.toList());
+            Stream<UserInfo> userInfoElStream= StreamSupport.stream(userRepo.findAll().spliterator(),false);
+            return userInfoElStream.map(UserInfo::getEid).collect(Collectors.toList());
         }
         return null;
     }

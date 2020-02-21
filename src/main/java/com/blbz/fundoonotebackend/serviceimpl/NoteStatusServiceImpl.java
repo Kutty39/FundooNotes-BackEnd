@@ -1,7 +1,7 @@
 package com.blbz.fundoonotebackend.serviceimpl;
 
 import com.blbz.fundoonotebackend.entiry.NoteStatus;
-import com.blbz.fundoonotebackend.repository.NoteStatusRepo;
+import com.blbz.fundoonotebackend.repository.jpa.NoteStatusRepo;
 import com.blbz.fundoonotebackend.service.NoteStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

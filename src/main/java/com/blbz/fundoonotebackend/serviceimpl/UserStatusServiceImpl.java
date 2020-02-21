@@ -1,7 +1,7 @@
 package com.blbz.fundoonotebackend.serviceimpl;
 
 import com.blbz.fundoonotebackend.entiry.UserStatus;
-import com.blbz.fundoonotebackend.repository.UserStatusRepo;
+import com.blbz.fundoonotebackend.repository.jpa.UserStatusRepo;
 import com.blbz.fundoonotebackend.service.UserStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

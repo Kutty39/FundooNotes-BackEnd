@@ -40,13 +40,9 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
         String header = request.getHeader("Authorization");
-        System.out.println(request.getRequestURI());
-        System.out.println(request.getPathInfo());
-        System.out.println("header : " +header);
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.replace("Bearer ","");
-            jwtUtil.loadJwt(token);
-            if (!blockedJwt.getBJwt().contains(token)) {
+            jwtUtil=jwtUtil.loadJwt(header);
+            if (!blockedJwt.getBJwt().contains(header)) {
                 if (jwtUtil.isValid()) {
                     if (jwtUtil.getClaims().get("url").equals("api")) {
                         UserDetails userDetails = myUserDetailService.loadUserByUsername(jwtUtil.userName());

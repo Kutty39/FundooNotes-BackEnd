@@ -17,8 +17,10 @@ import java.util.Date;
 @NoArgsConstructor
 @Order(2)
 @Component
+//@Document(indexName = "webappdb",type = "userinfo")
 public class UserInfo implements Serializable {
     @Id
+   // @org.springframework.data.annotation.Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int userId;
     @Column(name = "userFname", nullable = false)
@@ -39,8 +41,5 @@ public class UserInfo implements Serializable {
     @ManyToOne
     @JoinColumn(name = "userStatus")
     private UserStatus userStatus;
-   /* @JsonIgnore
-    @ManyToMany(mappedBy = "collaborator")
-    private List<NoteInfo> noteInfo;*/
 }
 

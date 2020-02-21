@@ -134,28 +134,27 @@ public class FrontController {
         if (!resetPassDto.getPassword().equals(resetPassDto.getConpassword())) {
             return ResponseEntity.badRequest().body("Password and conform is not matched");
         }
-        String jwt = header.replace("Bearer ", "");
-        userService.updatePassword(jwt, resetPassDto.getPassword());
+        userService.updatePassword(header, resetPassDto.getPassword());
         generalResponse.setResponse("Successfully resetted password. Please login again");
         return ResponseEntity.ok().body(generalResponse);
     }
 
     @PostMapping("/api/uploadpic")
     public ResponseEntity<?> uploadPic(@RequestParam String filePath, @RequestHeader("Authorization") String header) throws InvalidUserException {
-        s3Service.uploadFile(filePath, header.replace("Bearer ", ""));
+        s3Service.uploadFile(filePath, header);
         generalResponse.setResponse("Uploaded");
         return ResponseEntity.ok().body(generalResponse);
     }
 
     @PostMapping(value = "/api/uploadFile", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<?> uploadPicfile(@RequestParam String file, @RequestHeader("Authorization") String header) throws InvalidUserException, PicNotFoundException, IOException {
-        generalResponse.setResponse(s3Service.uploadFileWithFile(file, header.replace("Bearer ", "")));
+        generalResponse.setResponse(s3Service.uploadFileWithFile(file, header));
         return ResponseEntity.ok().body(generalResponse);
     }
 
     @GetMapping("/api/downloadpic")
     public ResponseEntity<?> downloadPic(@RequestHeader("Authorization") String header) throws InvalidUserException, PicNotFoundException {
-        generalResponse.setResponse(s3Service.downloadFile(header.replace("Bearer ", "")).toString());
+        generalResponse.setResponse(s3Service.downloadFile(header).toString());
         return ResponseEntity.ok().body(generalResponse);
     }
 }

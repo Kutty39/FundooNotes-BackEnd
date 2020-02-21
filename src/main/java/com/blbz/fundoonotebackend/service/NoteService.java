@@ -16,9 +16,9 @@ public interface NoteService {
 
     NoteDto editNote(NoteDto noteDto, String jwtHeader) throws  InvalidUserException;
 
-    int deleteNote(int noteId) throws NoteNotFoundException;
+    int deleteNote(int noteId,String jwtHeader) throws NoteNotFoundException, InvalidUserException;
 
-    int deleteNotes(List<Integer> noteId) throws NoteNotFoundException;
+    int deleteNotes(List<Integer> noteId, String jwtHeader) throws NoteNotFoundException, InvalidUserException;
 
     int updateStatus(NotesStatusDto noteStatusDto, String jwtHeader) throws InvalidNoteStatus, InvalidUserException;
 
@@ -34,4 +34,5 @@ public interface NoteService {
 
     List<NoteDto> getNotesByRemainder(String header) throws InvalidUserException;
 
+    List<NoteDto> searchAll(String text, String header) throws InvalidUserException;
 }

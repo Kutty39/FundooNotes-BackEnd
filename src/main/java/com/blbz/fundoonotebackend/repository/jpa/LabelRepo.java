@@ -1,4 +1,4 @@
-package com.blbz.fundoonotebackend.repository;
+package com.blbz.fundoonotebackend.repository.jpa;
 
 import com.blbz.fundoonotebackend.entiry.Label;
 import com.blbz.fundoonotebackend.entiry.UserInfo;

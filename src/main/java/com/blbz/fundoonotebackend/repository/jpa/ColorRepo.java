@@ -1,4 +1,4 @@
-package com.blbz.fundoonotebackend.repository;
+package com.blbz.fundoonotebackend.repository.jpa;
 
 import com.blbz.fundoonotebackend.entiry.Colors;
 import org.springframework.data.jpa.repository.JpaRepository;

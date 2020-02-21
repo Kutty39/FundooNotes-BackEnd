@@ -14,7 +14,7 @@ public class NoteDto {
     private String noteRemainder;
     private String noteRemainderLocation;
     private boolean showTick = false;
-    private boolean isPinned = false;
+    private boolean pinned = false;
     private String colour;
     private String noteStatus;
     private List<String> collaborator;

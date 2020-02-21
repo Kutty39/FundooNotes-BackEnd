@@ -121,13 +121,10 @@
             <artifactId>spring-cloud-starter-aws</artifactId>
             <version>2.2.1.RELEASE</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.6</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>

@@ -6,7 +6,7 @@ import com.blbz.fundoonotebackend.entiry.ProfilePic;
 import com.blbz.fundoonotebackend.entiry.UserInfo;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
 import com.blbz.fundoonotebackend.exception.PicNotFoundException;
-import com.blbz.fundoonotebackend.repository.PicRepo;
+import com.blbz.fundoonotebackend.repository.jpa.PicRepo;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +83,6 @@ public class S3ServiceImpl implements S3Service {
         bis.close();
         File outputfile = new File("image." + frmt);
         ImageIO.write(image, frmt, outputfile);
-        System.out.println(outputfile.getName());
         UserInfo userInfo = jwtUtil.validateHeader(header);
         ProfilePic profilePic1 = picRepo.findByCreatedBy(userInfo);
         if (profilePic1 == null) {

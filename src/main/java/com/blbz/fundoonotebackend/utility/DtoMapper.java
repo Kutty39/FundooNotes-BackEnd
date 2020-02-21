@@ -2,7 +2,7 @@ package com.blbz.fundoonotebackend.utility;
 
 import com.blbz.fundoonotebackend.dto.NoteDto;
 import com.blbz.fundoonotebackend.entiry.Label;
-import com.blbz.fundoonotebackend.entiry.NoteInfo;
+import com.blbz.fundoonotebackend.entiry.NoteInfoEl;
 import com.blbz.fundoonotebackend.entiry.UserInfo;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Component
 public class DtoMapper {
 
-    public NoteDto noteDtoMapper(NoteInfo noteInfo) {
+    public NoteDto noteDtoMapper(NoteInfoEl noteInfo) {
         NoteDto noteDto= new NoteDto();
         BeanUtils.copyProperties(noteInfo, noteDto);
         noteDto.setColour(noteInfo.getColors().getColorName());

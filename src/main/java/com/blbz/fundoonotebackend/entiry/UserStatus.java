@@ -15,8 +15,10 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @Order(3)
+//@Document(indexName = "webappdb",type = "userstatus")
 public class UserStatus implements Serializable {
     @Id
+    //@org.springframework.data.annotation.Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int statusId;
     @Column(nullable = false,unique = true)

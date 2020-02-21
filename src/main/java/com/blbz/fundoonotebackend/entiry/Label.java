@@ -14,8 +14,10 @@ import javax.persistence.*;
 @NoArgsConstructor
 @Order(5)
 @Component
+//@Document(indexName = "webappdb",type = "label")
 public class Label {
     @Id
+   // @org.springframework.data.annotation.Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int labelId;
     @Column(nullable = false)
@@ -23,7 +25,5 @@ public class Label {
     @ManyToOne
     @JoinColumn(name = "createdBy")
     private UserInfo createdBy;
-   /* @JsonIgnore
-    @ManyToMany(mappedBy = "labels")
-    private List<NoteInfo> noteInfos;*/
+
 }

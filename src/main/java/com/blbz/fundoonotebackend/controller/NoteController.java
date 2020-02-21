@@ -79,7 +79,7 @@ public class NoteController {
 
     @PutMapping("/notes")
     public ResponseEntity<?> editNotes(@RequestBody NoteDto noteDto, @RequestHeader("Authorization") String header) throws Exception {
-        NoteDto respNoteDto = noteService.editNote(noteDto, header.replace("Bearer ",""));
+        NoteDto respNoteDto = noteService.editNote(noteDto, header);
         if (respNoteDto !=null) {
             generalResponse.setResponse(respNoteDto);
             return ResponseEntity.ok().body(generalResponse);
@@ -90,7 +90,7 @@ public class NoteController {
 
     @PutMapping("/note/status")
     public ResponseEntity<?> updatedStatus(@RequestBody NoteStatusDto noteStatusDto, @RequestHeader("Authorization") String header) throws Exception {
-        int noteID = noteService.updateStatus(noteStatusDto, header.replace("Bearer ",""));
+        int noteID = noteService.updateStatus(noteStatusDto, header);
         generalResponse.setResponse(noteID);
         if (noteID > 0) {
             return ResponseEntity.ok().body(generalResponse);
@@ -100,19 +100,25 @@ public class NoteController {
     }
 
     @DeleteMapping("/notes/{id}")
-    public ResponseEntity<?> deleteNote(@PathVariable int id) throws NoteNotFoundException, ParameterEmptyException {
+    public ResponseEntity<?> deleteNote(@PathVariable int id,@RequestHeader("Authorization") String jwtHeader) throws NoteNotFoundException, ParameterEmptyException, InvalidUserException {
         if(id==0){
             throw new ParameterEmptyException("ID not passed");
         }
-        int noteId = noteService.deleteNote(id);
+        int noteId = noteService.deleteNote(id,jwtHeader);
         generalResponse.setResponse(noteId);
         return ResponseEntity.ok().body(generalResponse);
     }
 
     @DeleteMapping("/notes")
-    public ResponseEntity<?> deleteNote(@RequestBody NotesDeleteDto notesDeleteDto) throws NoteNotFoundException {
-        int noteID = noteService.deleteNotes(notesDeleteDto.getNoteId());
+    public ResponseEntity<?> deleteNote(@RequestBody NotesDeleteDto notesDeleteDto ,@RequestHeader("Authorization") String jwtHeader) throws NoteNotFoundException, InvalidUserException {
+        int noteID = noteService.deleteNotes(notesDeleteDto.getNoteId(),jwtHeader);
         generalResponse.setResponse(noteID);
+        return ResponseEntity.ok().body(generalResponse);
+    }
+
+    @GetMapping("/search/{text}")
+    public ResponseEntity<?> searchAll(@PathVariable String text,@RequestHeader("Authorization") String header) throws InvalidUserException {
+        generalResponse.setResponse(noteService.searchAll(text,header));
         return ResponseEntity.ok().body(generalResponse);
     }
 }

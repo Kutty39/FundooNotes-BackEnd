@@ -2,7 +2,7 @@ package com.blbz.fundoonotebackend.utility;
 
 import com.blbz.fundoonotebackend.entiry.UserInfo;
 import com.blbz.fundoonotebackend.exception.InvalidUserException;
-import com.blbz.fundoonotebackend.repository.UserRepo;
+import com.blbz.fundoonotebackend.repository.jpa.UserRepo;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -79,7 +79,7 @@ public class JwtUtilImpl implements JwtUtil {
     @CacheEvict(value = "jwtutil",key = "#token",condition = "#result.isValid()!=true"),
             @CacheEvict(value = "jwt",key = "#token",condition = "#result.isValid()!=true")})
     public JwtUtil loadJwt(String token) throws ExpiredJwtException {
-        claims = Jwts.parser().setSigningKey(MY_KEY).parseClaimsJws(token).getBody();
+        claims = Jwts.parser().setSigningKey(MY_KEY).parseClaimsJws(token.replace("Bearer ","")).getBody();
         userEmail = claims.getSubject();
         isValid = claims.getExpiration().after(new Date());
         return this;
@@ -91,11 +91,11 @@ public class JwtUtilImpl implements JwtUtil {
     }
 
     @Override
-    @Cacheable(value = "jwt",key = "#jwtHeader.substring(7)")
+    @Cacheable(value = "jwt",key = "#jwtHeader")
     public UserInfo validateHeader(String jwtHeader) throws InvalidUserException {
-            String jwt = jwtHeader.replace("Bearer ", "");
-            String userEmail = loadJwt(jwt).userName();
-            UserInfo userInfo = userRepo.findByEid(userEmail);
+        loadJwt(jwtHeader);
+        String userEmail = getUserEmail();
+            UserInfo userInfo = userRepo.findByUniqKey(userEmail);
             if (userInfo == null) {
                 throw new InvalidUserException();
             }
