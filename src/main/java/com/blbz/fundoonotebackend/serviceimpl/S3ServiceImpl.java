@@ -9,10 +9,10 @@ import com.blbz.fundoonotebackend.exception.PicNotFoundException;
 import com.blbz.fundoonotebackend.repository.jpa.PicRepo;
 import com.blbz.fundoonotebackend.service.JwtUtil;
 import com.blbz.fundoonotebackend.service.S3Service;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import sun.misc.BASE64Decoder;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -76,8 +76,7 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public URL uploadFileWithFile(String file, String header) throws InvalidUserException, PicNotFoundException, IOException {
         String frmt = file.split(";")[0].replace("data:image/", "");
-        BASE64Decoder decoder = new BASE64Decoder();
-        byte[] imageByte = decoder.decodeBuffer(file.split(",")[1]);
+        byte[] imageByte = Base64.decodeBase64(file.split(",")[1]);
         ByteArrayInputStream bis = new ByteArrayInputStream(imageByte);
         BufferedImage image = ImageIO.read(bis);
         bis.close();
